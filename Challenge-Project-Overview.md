@@ -16,129 +16,115 @@
 >
 > ❌ Remember that this is a public repo. Do NOT include: Proprietary data, PII, API keys, credentials, or anything confidential.
 
+## 📋 BTT Internal Evaluation Notes
+*(This section is for BTT staff and CAs only — remove before sharing with students)*
+
+### Technical Vetting
+| Check | Status | Notes |
+| :--- | :--- | :--- |
+| Python Compatibility | 🟢 | The project is centered on Python, as it leverages ML/DNN algorithms and is intended to run in a Pythonic environment (e.g., Google Colab). |
+| Data Readiness | 🟡 | The data requires cleaning and preprocessing; students may spend significant time on these tasks to ensure data quality. |
+| Resource Check | 🟢 | Utilizes free-tier tools like Google Colab, which are accessible to students. |
+
+### Internal Scores
+- **Student Fit Score:** 7/10
+- **Technical Depth Score:** 8/10
+- **Overall Recommendation:** REVISE
+
+### Advisor Feedback Draft
+The project concept is strong. However, consider refining the data preprocessing steps to ensure students are not overwhelmed. The balance between classification and fraud detection needs to be clearly delineated in the deliverables.
+
 ---
 
-### 🔍 SME Feedback from the Break Through Tech Evaluation Team
+# Classification and fraud detection for sensitive documents
 
-*Challenge Advisor: Please address the following feedback by editing this page. Your AI Studio Coach can help make project adjustments as needed, too. In addition to the grey section above, this section should be removed before sharing the repo with your student team.*
-
----
-
-# [Project Title]
-
-**Company / Org:** [Company / Org Name]  
-**Challenge Advisor:** [Name, Title, Email]  
-**Program:** Break Through Tech AI Studio - Fall 2026
+**Company / Org:** Verizon  
+**Challenge Advisor:** Dhananjaya Ramachandra, Dhananjaya.Ramachandra@verizon.com  
+**Program:** Break Through Tech AI Studio - Fall 2026  
 
 ---
 
-## 🏢 About [Company / Org Name]
-
-[2-3 sentences about your company: what you do, your industry, etc. You may also choose to specify your specific department or team.]
+## 🏢 About Verizon
+Verizon is a global leader in telecommunications, providing wireless, fiber-optic, and digital services to millions of customers. The team aims to leverage advanced AI technologies to enhance security measures and protect the company against financial losses associated with identity theft.
 
 ---
 
 ## 🎯 The Challenge
-
 ### Project Summary
-[In 2-3 sentences, describe what you're asking the team to do. Be specific about the type of data, ML techniques, and potential impact.]
-
-> **Example:** "In this project, your team will use customer transaction data and classification algorithms to build a model that predicts which users are likely to churn. This will help our retention team prioritize outreach."
+This project focuses on building robust classification and fraud detection models for sensitive identity documents, such as passports and driver's licenses. By utilizing open-source document datasets, the team will implement ML/DNN algorithms and LLMs to secure customer onboarding processes, ultimately preventing identity fraud and safeguarding corporate revenue.
 
 ### Success Criteria
-[What does success look like? Describe evaluation metrics (accuracy, F1 score, etc.) or qualitative outcomes that would make this project valuable to your company.]
+Successful completion of the project milestones (classification, fraud detection, and AI agent creation) leveraging ML/DNN algorithms and large language models.
 
 ### Project Milestones
-
-Use these milestones to guide your work. Your team will create a **GitHub Projects board** to track tasks within each milestone.
-
+Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Month | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **September** | [e.g., Data Understanding] | [e.g., Explore dataset, handle missing values, document findings] |
-| **October** | [e.g., Model Development] | [e.g., Train baseline model, experiment with approaches, iterate] |
-| **November** | [e.g., Evaluation & Presentation] | [e.g., Finalize model, prepare presentation, document results] |
+| **September** | Data Exploration & Preprocessing | Ingest the MIDV-500 dataset, perform exploratory data analysis, and establish cleaning protocols for image and categorical data. |
+| **October** | Feature Engineering & Baseline Modeling | Develop classification features and train initial baseline models to identify document types and detect anomalies. |
+| **November** | Model Optimization & Evaluation | Execute iterative hyperparameter tuning, run model verification, and assess the accuracy of fraud detection architectures. |
+| **December** | Insights, Deliverables & Presentation | Integrate findings into a final AI agent, generate business recommendations, and finalize the project documentation. |
 
 > **Note for the team:** Please create a GitHub Projects board in this repository to break these milestones into weekly tasks. Go to the **Projects** tab → **New project** → Choose **Board** → Add columns for each month.
 
 ---
 
 ## 📊 Dataset
-
-**Name and Source:** [Dataset name and where it's from]  
-**Format:** [e.g., CSV, JSON, images]  
-**Size:** [Approximate size in MB/GB]  
-**Location:** [Link to dataset or instructions for accessing it]
+**Name and Source:** MIDV-500 Dataset (https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf)  
+**Format:** Images (.png, .jpg) and categorical metadata  
+**Size:** under 1gb  
+**Location:** Accessible via the provided link; students must mirror a local copy for processing.  
 
 ### Key Details
-- [Brief description of what's in the data]
-- [Any known limitations or preprocessing needed]
-- [Link to data dictionary or documentation, if available]
+- Publicly available identity documents (passport, driving ID, etc.) including categorical and image data (.png, .jpg) from https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf. Data requires cleaning and preprocessing.
+- Preprocessing must include image normalization, noise reduction, and the mapping of categorical labels to numerical vectors for training input.
 
 ---
 
 ## 🛠️ Suggested Approach
-
-**ML Problem Type:** [e.g., Classification, Regression, NLP, Computer Vision, LLM/RAG]
-
+**ML Problem Type:** Classification, NLP & RAG, Multi-Agent Systems  
 **Recommended Libraries:**
-- [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
-
-**Evaluation Metrics:**
-- [e.g., Accuracy, Precision/Recall, RMSE, BLEU score]
+- ML/DNN algorithms
+- Large Language Models (LLMs)
+- Generative AI
+- Natural Language Processing (NLP)
+- Computer Vision
+- Deep Learning / Neural Networks
+- Google Colab
+**Evaluation Metrics:** Precision, Recall, F1-Score for classification, and Area Under the ROC Curve (AUC) for fraud detection sensitivity.
 
 ---
 
 ## 📚 Resources to Get Started
-
 The following resources will help your team understand the problem space and potential technical approaches for this project:
-
 **Background Reading:**
-- [e.g., Link to an article or blog post about the problem domain]
-- [e.g., Link to an industry report or case study]
-
+- Research on Document Identity Verification and Fraud Detection patterns in telecommunications.
 **Technical Tutorials:**
-- [e.g., Link to a free tutorial on the ML technique(s) involved]
-- [e.g., Link to documentation for a key library or tool]
-
+- PyTorch and TensorFlow tutorials for Image Classification and Computer Vision basics.
 **Code Examples:**
-- [e.g., Link to a relevant GitHub repo]
-- [e.g., Link to a sample implementation or starter code]
-
-**Other:**
-- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
-
-*Feel free to explore beyond these, and share anything interesting you find with me!*
+- Sample Jupyter notebooks for image preprocessing and standard CNN architectures.
 
 ---
 
-## 🤝 How We'll Work Together (v2)
-
-**Official check-ins:** During our biweekly 45-minute AI Studio Lab Section meeting block (2nd and 4th week of every month)
-
- **Other ways to reach out to me with questions:** 
-* [e.g., Your team's channel within Break Through Tech’s Discord space]
-* [e.g., Email; please copy your teammates and AI Studio Coach]
-* [e.g., Request a team check-in on Zoom]
-* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.]
-
-> 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
-
-**Recommended free coding / collaboration tools**
-* […]
-* […]
+## 🤝 How We'll Work Together
+**Check-ins:** During our biweekly 60-min AI Studio Lab Section meeting block (2nd and 4th week of every month)  
+**Communication:** Email and scheduled lab sessions  
+**Response time:** 48-72 hours  
+**Recommended Tools:**
+- **Coding:** Google Colab Free Tier  
+- **Collaboration:** GitHub, Notion  
+- **Virtual Meetings:** Zoom, Google Meet  
 
 ---
 
 ## 🚀 Getting Started
+1. **Review this overview document** and note any questions for our first meeting.
+2. **Begin reviewing the dataset** using the link provided in the Dataset section.
+3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects).
 
-1. **Review this overview document** and note any questions for our first meeting
-2. **Begin reviewing the dataset** using the link above
-3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects)
-
-I’m excited to work with you!
+I'm excited to work with you!
 
 ---
 
 ## ❓ Questions?
-
-Please bring any questions to our first meeting during the week of August 24th (Break Through Tech’s Bridge to Studio - Session C). 
+Please bring any questions to our first meeting during the week of August 24th (Break Through Tech's Bridge to Studio - Session B).
