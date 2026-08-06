@@ -40,6 +40,7 @@ The project concept is strong. However, consider refining the data preprocessing
 
 **Company / Org:** Verizon  
 **Challenge Advisor:** Dhananjaya Ramachandra, Dhananjaya.Ramachandra@verizon.com  
+**AI Coach:** Srihari Kamath, srihari.kamath@breakthroughtech.org   
 **Program:** Break Through Tech AI Studio - Fall 2026  
 
 ---
