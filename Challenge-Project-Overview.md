@@ -61,15 +61,11 @@ Use these milestones to guide your work. Your team will create a GitHub Projects
 
 | Month | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **September** | Data Exploration & Preprocessing | Ingest the MIDV-500 dataset, perform exploratory data analysis, and establish cleaning protocols for image and categorical data. • Frame business and problem parameters.<br>• Perform data collection, cleaning, and preparation on identity document dataset.<br>• Conduct feature engineering.<br>• Select, engineer, and evaluate classification models and produce reports. ||
+| **September** | Data Exploration & Preprocessing | Ingest the MIDV-500 dataset, perform exploratory data analysis, and establish cleaning protocols for image and categorical data. <br> • Frame business and problem parameters.<br>• Perform data collection, cleaning, and preparation on the identity document dataset.<br>• Conduct feature engineering.<br>• Select, engineer, and evaluate classification models and produce reports. ||
 | **October** | Feature Engineering & Baseline Modeling | Develop classification features and train initial baseline models to identify document types and detect anomalies. • Prepare specialized data subsets for fraud scenarios.<br>• Engineer and select specialized fraud detection models.<br>• Evaluate fraud detection performance and compile reports. | 
 | **November** | Model Optimization & Evaluation | Execute iterative hyperparameter tuning, run model verification, and assess the accuracy of fraud detection architectures. |
-| **December** | Insights, Deliverables & Presentation | Integrate findings into a final AI agent, generate business recommendations, and finalize the project documentation. |
-| Month | Milestone | Key Activities |
-| :--- | :--- | :--- |
-| September | Document Classification Pipeline | • Frame business and problem parameters.<br>• Perform data collection, cleaning, and preparation on identity document dataset.<br>• Conduct feature engineering.<br>• Select, engineer, and evaluate classification models and produce reports. |
-| October | Fraud Detection Modeling | • Prepare specialized data subsets for fraud scenarios.<br>• Engineer and select specialized fraud detection models.<br>• Evaluate fraud detection performance and compile reports. |
-| November | Autonomous AI Agent Creation | • Build an AI agent for autonomous document clustering and fraud detection. |
+| **December** | Insights, Deliverables & Presentation | •  Build an AI agent for autonomous document clustering and fraud detection. Integrate findings into a final AI agent, generate business recommendations, and finalize the project documentation. |
+
 
 ### Stretch Goals
 * **Autonomous AI Agent Extensions:** Expand the AI agent to handle fully autonomous end-to-end document classification and fraud detection workflows.
