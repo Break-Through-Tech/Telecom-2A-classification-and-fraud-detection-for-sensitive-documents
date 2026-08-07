@@ -46,92 +46,113 @@ The project concept is strong. However, consider refining the data preprocessing
 ---
 
 ## 🏢 About Verizon
-Verizon is a global leader in telecommunications, providing wireless, fiber-optic, and digital services to millions of customers. The team aims to leverage advanced AI technologies to enhance security measures and protect the company against financial losses associated with identity theft.
+Verizon is a global leader in telecommunications, providing wireless, fiber-optic, and digital services to millions of customers.
 
 ---
 
 ## 🎯 The Challenge
 ### Project Summary
-This project focuses on building robust classification and fraud detection models for sensitive identity documents, such as passports and driver's licenses. By utilizing open-source document datasets, the team will implement ML/DNN algorithms and LLMs to secure customer onboarding processes, ultimately preventing identity fraud and safeguarding corporate revenue.
+In this project, you will use the open source data sets pertaining to "identity documents (example: passport, driving id etc)" to build models leveraging ML/DNN algorithms for classification and fraud detection. Thus, these models would help in eliminating identity theft as part of wireless/wireline customer onboarding and help save millions of dollars in lost revenue for the company.
 
 ### Success Criteria
-Successful completion of the project milestones (classification, fraud detection, and AI agent creation) leveraging ML/DNN algorithms and large language models.
+Successful completion of the aforementioned project milestones leveraging ML/DNN algorithms and large language models.
+
+### Stretch Goals
+AI agent which can do autonomous:
+a) Classification
+b) Fraud Detection
+
+- The AI agent could also support various analytics and ad-hoc queries on the identity document corpus.
 
 ### Project Milestones
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 
 | Month | Milestone | Key Activities |
-|-------|-----------|----------------|
-| **September** | Data Exploration & Preprocessing | Ingest the MIDV-500 dataset, perform exploratory data analysis, and establish cleaning protocols for image and categorical data. <br> • Frame business and problem parameters.<br>• Perform data collection, cleaning, and preparation on the identity document dataset.<br>• Conduct feature engineering.<br>• Select, engineer, and evaluate classification models and produce reports. ||
-| **October** | Feature Engineering & Baseline Modeling | Develop classification features and train initial baseline models to identify document types and detect anomalies. • Prepare specialized data subsets for fraud scenarios.<br>• Engineer and select specialized fraud detection models.<br>• Evaluate fraud detection performance and compile reports. | 
-| **November** | Model Optimization & Evaluation | Execute iterative hyperparameter tuning, run model verification, and assess the accuracy of fraud detection architectures. |
-| **December** | Insights, Deliverables & Presentation | •  Build an AI agent for autonomous document clustering and fraud detection. Integrate findings into a final AI agent, generate business recommendations, and finalize the project documentation. |
-
-
-### Stretch Goals
-* **Autonomous AI Agent Extensions:** Expand the AI agent to handle fully autonomous end-to-end document classification and fraud detection workflows.
-* **Corpus Analytics & Ad-Hoc Querying:** Support natural language analytics and interactive ad-hoc queries across the entire identity document corpus.
+|---|---|---|
+| September 2026 | Classification | • Business and problem framing<br>• Data collection and preparation<br>• Feature engineering<br>• Model engineering and selection<br>• Model evaluation and reports |
+| October 2026 | Fraud Detection | • Data preparation<br>• Model engineering and selection<br>• Model evaluation and reports |
+| November 2026 | Autonomous AI Agent | • AI agent creation for autonomous clustering and fraud detection |
 
 > **Note for the team:** Please create a GitHub Projects board in this repository to break these milestones into weekly tasks. Go to the **Projects** tab → **New project** → Choose **Board** → Add columns for each month.
 
 ---
 
 ## 📊 Dataset
-**Name and Source:** MIDV-500 Dataset (https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf)  
+**Name and Source:** MIDV-500 Dataset
 **Format:** Images (.png, .jpg) and categorical metadata  
 **Size:** under 1gb  
-**Location:** Accessible via the provided link; students must mirror a local copy for processing.  
+**Location:** https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf  
 
 ### Key Details
-- Publicly available identity documents (passport, driving ID, etc.) including categorical and image data (.png, .jpg) from https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf. Data requires cleaning and preprocessing.
-- Preprocessing must include image normalization, noise reduction, and the mapping of categorical labels to numerical vectors for training input.
-
+- [Brief description of what's in the data]
+- [Any known limitations or preprocessing needed]
+- [Link to data dictionary or documentation, if available]
+  
 ---
 
 ## 🛠️ Suggested Approach
-**ML Problem Type:** Classification, NLP & RAG, Multi-Agent Systems  
+
+**ML Problem Type:** Classification, Natural Language Processing (NLP), Computer Vision, Deep Learning / Neural Networks, Large Language Models (LLMs)/ Generative AI
+
 **Recommended Libraries:**
-- ML/DNN algorithms
-- Large Language Models (LLMs)
-- Generative AI
-- Natural Language Processing (NLP)
-- Computer Vision
-- Deep Learning / Neural Networks
-- Google Colab
-**Evaluation Metrics:** Precision, Recall, F1-Score for classification, and Area Under the ROC Curve (AUC) for fraud detection sensitivity.
+- [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
+
+**Evaluation Metrics:**
+- [e.g., Accuracy, Precision/Recall, RMSE, BLEU score]
 
 ---
 
 ## 📚 Resources to Get Started
+
 The following resources will help your team understand the problem space and potential technical approaches for this project:
+
 **Background Reading:**
-- Research on Document Identity Verification and Fraud Detection patterns in telecommunications.
+- [e.g., Link to an article or blog post about the problem domain]
+- [e.g., Link to an industry report or case study]
+
 **Technical Tutorials:**
-- PyTorch and TensorFlow tutorials for Image Classification and Computer Vision basics.
+- [e.g., Link to a free tutorial on the ML technique(s) involved]
+- [e.g., Link to documentation for a key library or tool]
+
 **Code Examples:**
-- Sample Jupyter notebooks for image preprocessing and standard CNN architectures.
+- [e.g., Link to a relevant GitHub repo]
+- [e.g., Link to a sample implementation or starter code]
+
+**Other:**
+- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
+
+*Feel free to explore beyond these, and share anything interesting you find with me!*
 
 ---
 
 ## 🤝 How We'll Work Together
-**Check-ins:** During our biweekly 60-min AI Studio Lab Section meeting block (2nd and 4th week of every month)  
-**Communication:** Email and scheduled lab sessions  
-**Response time:** 48-72 hours  
-**Recommended Tools:**
-- **Coding:** Google Colab Free Tier  
-- **Collaboration:** GitHub, Notion  
-- **Virtual Meetings:** Zoom, Google Meet  
+
+**Official check-ins:** During our biweekly 45-minute AI Studio Lab Section meeting block (2nd and 4th week of every month)
+
+ **Other ways to reach out to me with questions:** 
+* [e.g., Your team's channel within Break Through Tech’s Discord space]
+* [e.g., Email; please copy your teammates and AI Studio Coach]
+* [e.g., Request a team check-in on Zoom]
+* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.]
+
+> 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
+
+**Recommended free coding / collaboration tools**
+* […]
+* […]
 
 ---
 
 ## 🚀 Getting Started
-1. **Review this overview document** and note any questions for our first meeting.
-2. **Begin reviewing the dataset** using the link provided in the Dataset section.
-3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects).
 
-I'm excited to work with you!
+1. **Review this overview document** and note any questions for our first meeting
+2. **Begin reviewing the dataset** using the link above
+3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects)
+
+I’m excited to work with you!
 
 ---
 
 ## ❓ Questions?
-Please bring any questions to our first meeting during the week of August 24th (Break Through Tech's Bridge to Studio - Session B).
+
+Please bring any questions to our first meeting during the week of August 24th (Break Through Tech’s Bridge to Studio - Session C). 
