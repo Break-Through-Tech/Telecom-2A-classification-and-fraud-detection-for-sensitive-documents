@@ -78,7 +78,7 @@ Use these milestones to guide your work. Your team will create a GitHub Projects
 ---
 
 ## 📊 Dataset
-**Name and Source:** MIDV-500 Dataset
+**Name and Source:** MIDV-500 Dataset   
 **Format:** Images (.png, .jpg) and categorical metadata  
 **Size:** under 1gb  
 **Location:** https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf  
