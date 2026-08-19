@@ -1,45 +1,8 @@
----
 
-> ## Challenge Advisor: Update & Finalize Your Project Overview
->
-> > 💡 **These grey text instructions are just for you, the team's Challenge Advisor; please delete them once you have completed the steps below.**
->
-> We've pre-populated this Challenge Project Overview page — which is what will be shared with your Break Through Tech student team in August — using the details from your submission form. You should have received an email inviting you to join this repo as a Collaborator, enabling you to add files and make edits.
-> 
-> In order for your project to be finalized and assigned to a team, please:
-> 1. **Review all sections below** and update or expand any content as needed, making sure to address the SME Feedback in the section immediately below. Look for square brackets to find the places below that require additional inputs from you (e.g., "About [Company / Org Name]").
-> 2. **Add your dataset** to the [data folder](data) in this repo.
-> 3. **Close the Issue assigned to you in this repo** to let us know that you have made your edits and the overview page is ready for final review. You can do this by going to the _Issues_ tab in the top left section of the menu above, add a comment that says "CA review complete", and click the button to Close the Issue. 
->
-> If you're unfamiliar with how to edit a page like this in GitHub, check out [this tutorial](https://ubc-lib-geo.github.io/gis-workshop-waml-template/content/handson/edit-readme.html) for a quick overview (start with step 2 and only edit this page), and [this guide](https://ubc-lib-geo.github.io/gis-workshop-waml-template/content/markdown.html) on how to use Markdown to compose text.
->
->
-> ❌ Remember that this is a public repo. Do NOT include: Proprietary data, PII, API keys, credentials, or anything confidential.
+# Classification to detect fraud of sensitive identity documents
 
-## 📋 BTT Internal Evaluation Notes
-*(This section is for BTT staff and CAs only — remove before sharing with students)*
-
-### Technical Vetting
-| Check | Status | Notes |
-| :--- | :--- | :--- |
-| Python Compatibility | 🟢 | The project is centered on Python, as it leverages ML/DNN algorithms and is intended to run in a Pythonic environment (e.g., Google Colab). |
-| Data Readiness | 🟡 | The data requires cleaning and preprocessing; students may spend significant time on these tasks to ensure data quality. |
-| Resource Check | 🟢 | Utilizes free-tier tools like Google Colab, which are accessible to students. |
-
-### Internal Scores
-- **Student Fit Score:** 7/10
-- **Technical Depth Score:** 8/10
-- **Overall Recommendation:** REVISE
-
-### Advisor Feedback Draft
-The project concept is strong. However, consider refining the data preprocessing steps to ensure students are not overwhelmed. The balance between classification and fraud detection needs to be clearly delineated in the deliverables.
-
----
-
-# Classification and fraud detection for sensitive documents
-
-**Company / Org:** Verizon  
-**Challenge Advisor:** Dhananjaya Ramachandra, Dhananjaya.Ramachandra@verizon.com  
+**Company / Org:** Verizon Inc 
+**Challenge Advisor:** DJ (Dhananjaya Ramachandra), Dhananjaya.Ramachandra@verizon.com  
 **AI Coach:** Srihari Kamath, srihari.kamath@breakthroughtech.org   
 **Program:** Break Through Tech AI Studio - Fall 2026  
 
@@ -52,53 +15,87 @@ Verizon is a global leader in telecommunications, providing wireless, fiber-opti
 
 ## 🎯 The Challenge
 ### Project Summary
-In this project, you will use the open source data sets pertaining to "identity documents (example: passport, driving id etc)" to build models leveraging ML/DNN algorithms for classification and fraud detection. Thus, these models would help in eliminating identity theft as part of wireless/wireline customer onboarding and help save millions of dollars in lost revenue for the company.
+In this project, you will use the open source data sets pertaining to "identity documents (example: passport, driving id etc)" to build models leveraging ML/DNN algorithms for binary classification and accordingly detect fraud! Thus, these models would help in eliminating identity theft as part of wireless/wireline customer onboarding and help save millions of dollars in lost revenue for the company!
 
 ### Success Criteria
 Successful completion of the aforementioned project milestones leveraging ML/DNN algorithms and large language models.
 
 ### Stretch Goals
-AI agent which can do autonomous:
-a) Classification
-b) Fraud Detection
+- AI agent which can do autonomous fraud detection i.e. detect if the submitted document of the user is a genuine document or a fake document by invoking the binary classifier that was built as part of the core/non-stretch goal.
 
-- The AI agent could also support various analytics and ad-hoc queries on the identity document corpus.
+- The AI agent could also optionally support various analytics and ad-hoc queries on the identity document corpus.
+
+### Extra Stretch Goals
+- Detect the type of document that was submitted i.e. classify (thru a simple multi-class classifier or a cluster-er) if the document submitted is a passport or driving id or national id or some unknown document!
+
+NOTE: This is a extra-stretch goal for the students to experience the multi-class classifier apart from the binary classifier they built as part of the core/non-stretch goal!
 
 ### Project Milestones
-Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
+Use these milestones to guide your work and accordingly create GitHub Project board to track tasks within each milestone.
 
 | Month | Milestone | Key Activities |
 |---|---|---|
-| September 2026 | Classification | • Business and problem framing<br>• Data collection and preparation<br>• Feature engineering<br>• Model engineering and selection<br>• Model evaluation and reports |
-| October 2026 | Fraud Detection | • Data preparation<br>• Model engineering and selection<br>• Model evaluation and reports |
-| November 2026 | Autonomous AI Agent | • AI agent creation for autonomous clustering and fraud detection |
+| September 2026 | Binary Classification | • Business and problem framing<br>• Data collection and preparation<br>• Feature engineering<br>• Model engineering and selection<br>• Model evaluation and reports |
+| October 2026 | Autonomous AI Agent | • AI agent creation for autonomous classification and accordingly detect fraud|
+| November 2026 | Multi-Class Classification | • Data preparation<br>• Model engineering and selection<br>• Model evaluation and reports |
+
 
 > **Note for the team:** Please create a GitHub Projects board in this repository to break these milestones into weekly tasks. Go to the **Projects** tab → **New project** → Choose **Board** → Add columns for each month.
 
 ---
 
 ## 📊 Dataset
-**Name and Source:** MIDV-500 Dataset   
-**Format:** Images (.png, .jpg) and categorical metadata  
-**Size:** under 1gb  
-**Location:** https://smartengines.com/wp-content/uploads/2020/04/datasets-of-id-documents-midv-500.pdf  
+**Name and Source:** IDNet Identity Document Analysis Dataset (Kaggle)
+**Format:** Static Images (`.jpg`, `.png`) categorized by folder structure
+**Size:** ~400 GB total (Students sample down to < 1 GB / ~600 images locally)
+**Location:** https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis
+
 
 ### Key Details
-- [Brief description of what's in the data]
-- [Any known limitations or preprocessing needed]
-- [Link to data dictionary or documentation, if available]
+
+- **Description of Data**
+  - Contains **597,900 synthetically generated images** (~400 GB total) of identity documents designed for privacy-preserving document analysis and classification.
+  - Covers three primary document categories across multiple regions: **Passports**, **Driver's Licenses** (10 U.S. states), and **National ID Cards** (10 European countries).
+
+- **Known Limitations & Preprocessing Needed**
+  - **Initial Storage & RAM Slicing:** The full dataset is ~400 GB; students can use Python's [`glob` module](https://docs.python.org/3/library/glob.html) to slice local file arrays (e.g., `file_list[:200]`) to cap RAM under 1 GB and speed up training [see scikit-learn's `train_test_split` guide](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html).
+  - **Synthetic Fake Generation:** Since the dataset contains only genuine document templates, students can generate the "Fake" subset using OpenCV Gaussian Blur [`cv2.GaussianBlur`](https://docs.opencv.org/4.x/d4/d86/group__imgproc__filter.html) with Gaussian noise injection, or use industry-standard libraries like [Albumentations Documentation](https://albumentations.ai/docs/).
+  - **Feature Extraction & Normalization:** Images must be grayscaled via OpenCV [`cv2.cvtColor`](https://docs.opencv.org/4.x/d8/d01/group__imgproc__color__conversions.html) and resized prior to computing spatial edge histograms or micro-texture patterns using [`scikit-image feature module`](https://scikit-image.org/docs/stable/api/skimage.feature.html) (specifically `skimage.feature.hog` and `skimage.feature.local_binary_pattern`).
+
+- **Documentation & Links**
+  - **Kaggle Dataset Page:** [IDNet: Identity Document Analysis Image Dataset](https://www.kaggle.com/datasets/chitreshkr/idnet-identity-document-analysis)
   
 ---
 
 ## 🛠️ Suggested Approach
 
-**ML Problem Type:** Classification, Natural Language Processing (NLP), Computer Vision, Deep Learning / Neural Networks, Large Language Models (LLMs)/ Generative AI
+**ML Problem Type:** Classification, Computer Vision, Deep Learning / Neural Networks, Natural Language Processing (NLP), Large Language Models (LLMs) / Generative AI
+
+```markdown
+```text
+[1. Load Directory Data] 
+           │
+           ▼
+[2. Feature Extraction]  ──> (Grayscale ──> Resize ──> Compute HOG/LBP Vectors)
+           │
+           ▼
+[3. Data Partitioning]   ──> (Train/Test Split 80/20)
+           │
+           ▼
+[4. Model Training]      ──> (Classification algorithms / Fit)
+           │
+           ▼
+[5. Inference]           ──> (Predict on Unseen Documents ──> Class Probability)
+           │
+           ▼
+[6. Quality Evaluation]  ──> (Precision, Recall, F1, Confusion Matrix)
+```
 
 **Recommended Libraries:**
-- [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
+- numpy, cv2, midv500, skimage, sklearn, os, glob etc
 
 **Evaluation Metrics:**
-- [e.g., Accuracy, Precision/Recall, RMSE, BLEU score]
+- accuracy, precision, recall, F1-score, and ROC-AUC
 
 ---
 
@@ -107,21 +104,20 @@ Use these milestones to guide your work. Your team will create a GitHub Projects
 The following resources will help your team understand the problem space and potential technical approaches for this project:
 
 **Background Reading:**
-- [e.g., Link to an article or blog post about the problem domain]
-- [e.g., Link to an industry report or case study]
+- **[IDNet Benchmark Dataset Paper (arXiv)](https://arxiv.org/abs/2408.01690):** The official research paper introducing the IDNet dataset, detailing synthetic identity document generation and privacy-preserving document fraud analysis.
+- **[PyImageSearch - Document & Image Classification Overview](https://pyimagesearch.com/):** Comprehensive articles covering classical computer vision techniques and real-world document processing workflows.
 
 **Technical Tutorials:**
-- [e.g., Link to a free tutorial on the ML technique(s) involved]
-- [e.g., Link to documentation for a key library or tool]
+- **[Histogram of Oriented Gradients (HOG) & SVM Tutorial](https://pyimagesearch.com/2014/11/10/histogram-oriented-gradients-object-detection/):** Step-by-step guide on calculating HOG descriptors and training Linear/RBF SVM classifiers for object recognition.
+- **[Local Binary Patterns (LBP) Texture Classification](https://pyimagesearch.com/2015/12/07/local-binary-patterns-with-python-opencv/):** Hands-on tutorial on extracting LBP micro-texture histograms with OpenCV and training Random Forest classifiers.
 
 **Code Examples:**
-- [e.g., Link to a relevant GitHub repo]
-- [e.g., Link to a sample implementation or starter code]
+- **[Robust Document OCR & Preprocessing Pipeline (Kaggle)](https://www.kaggle.com/code/ahmedmohamedab/robust-document-ocr-preprocessing-pipeline):** Kaggle notebook demonstrating document binarization, perspective warping, and image cleanup pipelines.
+- **[scikit-image Feature Extraction Documentation](https://scikit-image.org/docs/stable/api/skimage.feature.html):** Official documentation and working code snippets for `skimage.feature.hog` and `skimage.feature.local_binary_pattern`.
 
 **Other:**
-- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
-
-*Feel free to explore beyond these, and share anything interesting you find with me!*
+- **[OpenCV Image Processing Tutorials](https://docs.opencv.org/4.x/d2/d96/tutorial_py_table_of_contents_imgproc.html):** Official guide on core image transformations, Gaussian smoothing, and adaptive thresholding methods.
+- **[MIDV-500 Dataset Overview (YouTube)](https://www.youtube.com/):** Search for "MIDV-500 dataset" on YouTube for visual demonstrations of document capture under extreme real-world lighting and angle distortions.
 
 ---
 
@@ -130,16 +126,9 @@ The following resources will help your team understand the problem space and pot
 **Official check-ins:** During our biweekly 45-minute AI Studio Lab Section meeting block (2nd and 4th week of every month)
 
  **Other ways to reach out to me with questions:** 
-* [e.g., Your team's channel within Break Through Tech’s Discord space]
-* [e.g., Email; please copy your teammates and AI Studio Coach]
-* [e.g., Request a team check-in on Zoom]
-* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.]
-
-> 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
-
-**Recommended free coding / collaboration tools**
-* […]
-* […]
+* Email; please copy your teammates and AI Studio Coach
+* If something cant be answered via email, then we could schedule a zoom/google meet call.
+* Note: DJ will be OOO starting Aug 24th to Sep 11 2026. So, please reach out to your AI Studio Coach with urgent questions.
 
 ---
 
