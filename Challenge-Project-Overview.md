@@ -2,7 +2,7 @@
 # Classification to detect fraud of sensitive identity documents
 
 **Company / Org:** Verizon Inc 
-**Challenge Advisor:**   DJ (Dhananjaya Ramachandra), Dhananjaya.Ramachandra@verizon.com  
+**Challenge Advisor:** DJ (Dhananjaya Ramachandra), Dhananjaya.Ramachandra@verizon.com  
 **AI Coach:** Srihari Kamath, srihari.kamath@breakthroughtech.org   
 **Program:** Break Through Tech AI Studio - Fall 2026  
 
