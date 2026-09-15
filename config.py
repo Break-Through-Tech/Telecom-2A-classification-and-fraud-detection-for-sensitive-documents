@@ -25,11 +25,12 @@ SEED = 42
 # --- Preprocessing settings ---
 IMG_SIZE = (256, 256)  # (width, height)
  
-# --- Document categories -> IDNet subfolder names ---
-# NOTE: after you download and unzip IDNet, check the actual folder names
-# inside idnet_raw/ and update these values to match.
+# --- Document categories -> country/state codes actually present in the archive ---
+# This dataset's zip contains per-country/state sub-zips (e.g. GRC.zip, RUS.zip,
+# WV.zip) rather than folders named "passports"/"drivers_licenses"/"national_ids".
+# Map each document type to the codes available. NOTE: this particular download
+# has no passport data -- add a "passport" entry here if you get that separately.
 CATEGORIES = {
-    "passport": "passports",
-    "drivers_license": "drivers_licenses",
-    "national_id": "national_ids",
+    "national_id": ["GRC", "RUS"],
+    "drivers_license": ["WV"],
 }

@@ -1,96 +1,107 @@
+"""
+Task 2: Get a local sample of the IDNet dataset with (close to) zero extra disk usage.
+ 
+This dataset's archive contains one zip PER country/state code (e.g. GRC.zip,
+RUS.zip, WV.zip) rather than a flat folder of images, and some of those inner
+zips are tens of GB on their own.
+ 
+Instead of extracting an inner zip to disk before sampling from it, this
+script opens it as a live, in-memory stream directly from inside the outer
+archive (via zipfile's nested `open()`), and reads out only the handful of
+chosen images. As long as the outer archive stored the inner zips WITHOUT
+additional compression (very common, since compressing an already-compressed
+zip gains nothing), this never writes a temporary copy of the inner zip to
+disk at all -- only the small sampled images themselves.
+ 
+Run from the project root:
+    python scripts/task2_download_and_sample.py
+"""
+ 
 import os
-import glob
-import shutil
 import random
 import sys
 import zipfile
-import tarfile
  
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import ARCHIVE_PATH, RAW_DATA_DIR, SAMPLE_DIR, CATEGORIES, N_PER_CATEGORY, SEED
+from config import ARCHIVE_PATH, SAMPLE_DIR, CATEGORIES, N_PER_CATEGORY, SEED
+ 
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
  
  
-def extract_archive(archive_path, dest_dir):
-    """Extract a dataset archive, detecting its real format from content, not extension."""
-    os.makedirs(dest_dir, exist_ok=True)
- 
-    if zipfile.is_zipfile(archive_path):
-        print(f"'{archive_path}' is a zip archive (regardless of its extension) -- extracting...")
-        with zipfile.ZipFile(archive_path) as zf:
-            zf.extractall(dest_dir)
-    elif tarfile.is_tarfile(archive_path):
-        print(f"'{archive_path}' is a tar archive -- extracting...")
-        with tarfile.open(archive_path) as tf:
-            tf.extractall(dest_dir)
-    else:
-        raise ValueError(
-            f"Couldn't recognize '{archive_path}' as a zip or tar archive. "
-            f"Run `file {archive_path}` (macOS/Linux) or check Properties (Windows) "
-            f"to confirm what format it actually is."
-        )
- 
-    print(f"Extracted to: {os.path.abspath(dest_dir)}")
- 
- 
-def download_dataset():
-    """Download the IDNet dataset via the Kaggle CLI (only used if no local archive exists)."""
-    os.makedirs(RAW_DATA_DIR, exist_ok=True)
-    exit_code = os.system(
-        f"kaggle datasets download -d chitreshkr/idnet-identity-document-analysis "
-        f"-p {RAW_DATA_DIR} --unzip"
-    )
-    if exit_code != 0:
-        raise RuntimeError(
-            "Kaggle download failed. Make sure the 'kaggle' package is installed "
-            "(pip install kaggle) and kaggle.json is set up correctly (see docstring above), "
-            f"or place the dataset archive at '{ARCHIVE_PATH}' instead."
+def check_archive():
+    if not os.path.exists(ARCHIVE_PATH):
+        raise FileNotFoundError(
+            f"Couldn't find the archive at '{ARCHIVE_PATH}'. Update ARCHIVE_PATH in "
+            f"config.py to point at your downloaded dataset file."
         )
  
  
-def get_raw_data():
-    """Make sure idnet_raw/ is populated, either from a local archive or a fresh download."""
-    if os.path.exists(RAW_DATA_DIR) and os.listdir(RAW_DATA_DIR):
-        print(f"'{RAW_DATA_DIR}' already exists and is non-empty -- skipping extraction/download.")
-        return
+def list_available_codes():
+    """List the country/state codes (inner zip names) actually present in the archive."""
+    with zipfile.ZipFile(ARCHIVE_PATH) as outer_zip:
+        return sorted(
+            name[:-4] for name in outer_zip.namelist() if name.lower().endswith(".zip")
+        )
  
-    if os.path.exists(ARCHIVE_PATH):
-        print(f"Found local archive at '{ARCHIVE_PATH}'.")
-        extract_archive(ARCHIVE_PATH, RAW_DATA_DIR)
-    else:
-        print(f"No local archive found at '{ARCHIVE_PATH}' -- downloading via Kaggle API instead.")
-        download_dataset()
+ 
+def sample_code(code, category, n_images):
+    """
+    Stream-read one inner zip directly out of the outer archive and sample
+    n_images from it -- no temporary extraction to disk.
+    """
+    inner_zip_name = f"{code}.zip"
+ 
+    with zipfile.ZipFile(ARCHIVE_PATH) as outer_zip:
+        info = outer_zip.getinfo(inner_zip_name)
+        if info.compress_type != zipfile.ZIP_STORED:
+            print(
+                f"[{code}] NOTE: this inner zip is compressed (not stored) inside the "
+                f"outer archive, so streaming reads may be slower than usual, but will "
+                f"still avoid writing a full temp copy to disk."
+            )
+ 
+        with outer_zip.open(inner_zip_name) as inner_stream:
+            with zipfile.ZipFile(inner_stream) as inner_zip:
+                image_names = [
+                    n for n in inner_zip.namelist() if n.lower().endswith(IMAGE_EXTENSIONS)
+                ]
+                random.shuffle(image_names)
+                chosen = image_names[:n_images]
+ 
+                out_dir = os.path.join(SAMPLE_DIR, "real", category)
+                os.makedirs(out_dir, exist_ok=True)
+ 
+                for name in chosen:
+                    data = inner_zip.read(name)
+                    # Prefix with the code so filenames from different codes never collide
+                    out_name = f"{code}_{os.path.basename(name)}"
+                    with open(os.path.join(out_dir, out_name), "wb") as f:
+                        f.write(data)
+ 
+                print(f"[{code}] sampled {len(chosen)} of {len(image_names)} available images -> '{category}'")
  
  
 def sample_dataset():
-    """Randomly sample N_PER_CATEGORY images per document category into SAMPLE_DIR."""
     random.seed(SEED)
-    os.makedirs(SAMPLE_DIR, exist_ok=True)
+    available_codes = set(list_available_codes())
+    print("Codes found in archive:", sorted(available_codes))
  
-    for category, subfolder in CATEGORIES.items():
-        search_pattern = os.path.join(RAW_DATA_DIR, "**", subfolder, "**", "*.*")
-        all_files = glob.glob(search_pattern, recursive=True)
-        all_files = [f for f in all_files if f.lower().endswith((".jpg", ".jpeg", ".png"))]
+    for category, codes in CATEGORIES.items():
+        codes_present = [c for c in codes if c in available_codes]
+        missing = [c for c in codes if c not in available_codes]
+        if missing:
+            print(f"WARNING: '{category}' expects codes {missing}, but they're not in the archive.")
+        if not codes_present:
+            print(f"WARNING: no codes available for '{category}' -- skipping.")
+            continue
  
-        if not all_files:
-            print(
-                f"WARNING: found 0 images for '{category}' using subfolder name "
-                f"'{subfolder}'. Check the actual folder names under "
-                f"'{os.path.abspath(RAW_DATA_DIR)}' and update CATEGORIES in config.py."
-            )
- 
-        random.shuffle(all_files)
-        sampled_files = all_files[:N_PER_CATEGORY]
- 
-        out_dir = os.path.join(SAMPLE_DIR, "real", category)
-        os.makedirs(out_dir, exist_ok=True)
-        for f in sampled_files:
-            shutil.copy(f, os.path.join(out_dir, os.path.basename(f)))
- 
-        print(f"{category}: found {len(all_files)} images, sampled {len(sampled_files)}")
+        n_per_code = max(1, N_PER_CATEGORY // len(codes_present))
+        for code in codes_present:
+            sample_code(code, category, n_per_code)
  
     print("\nLocal sample ready at:", os.path.abspath(SAMPLE_DIR))
  
  
 if __name__ == "__main__":
-    get_raw_data()
+    check_archive()
     sample_dataset()
