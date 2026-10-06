@@ -6,3 +6,5 @@ seaborn
 scikit-image
 albumentations
 kaggle
+requests
+Pillow

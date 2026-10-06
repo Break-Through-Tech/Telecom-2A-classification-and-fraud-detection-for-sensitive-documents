@@ -11,7 +11,7 @@ import os
 # at it. The extension doesn't matter -- Python checks the file's actual
 # format, not its name. Leave it as-is if you want the script to download
 # it for you via the Kaggle API instead.
-ARCHIVE_PATH = os.path.join("data", "files-archive.file")
+ARCHIVE_PATH = os.path.join("data", "files-archive")
  
 RAW_DATA_DIR = "idnet_raw"
 SAMPLE_DIR = "idnet_sample"
