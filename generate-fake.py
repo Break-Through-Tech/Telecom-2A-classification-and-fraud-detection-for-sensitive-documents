@@ -1,38 +1,32 @@
-"""
-Task 3: Generate the synthetic "fake" document class.
- 
-IDNet only contains genuine document templates, so we simulate fraud/tampering
-by applying Gaussian blur + noise injection with OpenCV to create a matching
-"fake" set. (Albumentations is a good alternative if you want more varied
-augmentations later.)
- 
-Run from the project root, after task2_download_and_sample.py:
-    python scripts/task3_generate_fake_class.py
-"""
- 
 import os
 import glob
 import sys
+import random
  
 import cv2
+import albumentations as A
 import numpy as np
  
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import SAMPLE_DIR, CATEGORIES
+from config import SAMPLE_DIR, CATEGORIES, SEED
  
- 
-def add_gaussian_noise(image, mean=0, sigma=15):
-    """Add Gaussian noise to simulate document degradation/tampering."""
-    noise = np.random.normal(mean, sigma, image.shape).astype(np.float32)
-    noisy = image.astype(np.float32) + noise
-    return np.clip(noisy, 0, 255).astype(np.uint8)
- 
- 
-def make_fake_version(image, blur_kernel=(7, 7), noise_sigma=15):
-    """Apply Gaussian blur + noise to create a synthetic 'fake' document."""
-    blurred = cv2.GaussianBlur(image, blur_kernel, 0)
-    faked = add_gaussian_noise(blurred, sigma=noise_sigma)
-    return faked
+TAMPER_TRANSFORM = A.Compose([
+    # p=1.0 on the OneOf itself so every fake is guaranteed to differ from its
+    # real source image (only the choice of blur and its strength are random).
+    A.OneOf([
+        A.GaussianBlur(blur_limit=(3, 9), p=1.0),
+        A.MotionBlur(blur_limit=(3, 9), p=1.0),
+    ], p=1.0),
+    A.GaussNoise(std_range=(0.05, 0.2), p=0.7),
+    A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+    A.ImageCompression(quality_range=(30, 80), p=0.5),
+    A.CoarseDropout(num_holes_range=(1, 3), hole_height_range=(0.05, 0.15), hole_width_range=(0.05, 0.3), p=0.3),
+])
+
+
+def make_fake_version(image):
+    """Apply a randomized set of degradations to simulate document tampering."""
+    return TAMPER_TRANSFORM(image=image)["image"]
  
  
 def generate_fakes():
@@ -58,4 +52,6 @@ def generate_fakes():
  
  
 if __name__ == "__main__":
+    random.seed(SEED)
+    np.random.seed(SEED)
     generate_fakes()

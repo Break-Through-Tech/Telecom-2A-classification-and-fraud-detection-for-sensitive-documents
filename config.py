@@ -17,6 +17,7 @@ RAW_DATA_DIR = "idnet_raw"
 SAMPLE_DIR = "idnet_sample"
 PROCESSED_DIR = "idnet_processed"
 MANIFEST_PATH = "idnet_processed_manifest.csv"
+FEATURES_PATH = "idnet_features.csv"
  
 # --- Sampling settings ---
 N_PER_CATEGORY = 200   # 200 images x 3 categories ~= 600 images total
@@ -31,6 +32,7 @@ IMG_SIZE = (256, 256)  # (width, height)
 # Map each document type to the codes available. NOTE: this particular download
 # has no passport data -- add a "passport" entry here if you get that separately.
 CATEGORIES = {
-    "national_id": ["GRC", "RUS"],
+    "national_id": ["RUS"],
     "drivers_license": ["WV"],
+    "passport": ["GRC"]
 }
