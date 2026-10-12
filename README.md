@@ -10,11 +10,9 @@
 
 | Name             | GitHub Handle | Contribution                                                             |
 |------------------|---------------|--------------------------------------------------------------------------|
-| Taylor Nguyen    | @taylornguyen | Data exploration, visualization, overall project coordination            |
-| Jordan Ramirez   | @jramirez     | Data collection, exploratory data analysis (EDA), dataset documentation  |
-| Amina Hassan     | @aminahassan  | Data preprocessing, feature engineering, data validation                 |
-| Priya Mehta      | @pmehta       | Model selection, hyperparameter tuning, model training and optimization  |
-| Chris Park       | @chrispark    | Model evaluation, performance analysis, results interpretation           |
+| Margaret Cartee    | @margaret-ca | HOG/LBP feature extraction, synthetic fraud generation, model training            |
+| Abdullah Suleman   | @abdullahsulem    | Data collection, exploratory data analysis (EDA), dataset documentation  |
+| Aarav Rajeev Gupta     | @A-Arav0307 | Data preprocessing, feature engineering, data validation                 |
 
 ---
 
@@ -32,11 +30,7 @@
 
 **Provide step-by-step instructions so someone else can run your code and reproduce your results. Depending on your setup, include:**
 
-1. **Clone the repository and check out the project branch:**
-   ```bash
-   git clone <repo-url>
-   cd Telecom-2A-classification-and-fraud-detection-for-sensitive-documents
-   ```
+1. **Clone the repository**
 
 2. **Install dependencies:**
    ```bash
