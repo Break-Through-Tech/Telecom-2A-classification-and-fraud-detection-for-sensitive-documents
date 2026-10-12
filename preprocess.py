@@ -6,7 +6,7 @@ import cv2
 import pandas as pd
  
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import SAMPLE_DIR, PROCESSED_DIR, MANIFEST_PATH, CATEGORIES, IMG_SIZE
+from config import COMPRESSED_DIR, PROCESSED_DIR, MANIFEST_PATH, CATEGORIES, IMG_SIZE
  
  
 def preprocess_image(path, size=IMG_SIZE):
@@ -23,7 +23,7 @@ def preprocess_all():
  
     for label in ["real", "fake"]:
         for category in CATEGORIES.keys():
-            src_dir = os.path.join(SAMPLE_DIR, label, category)
+            src_dir = os.path.join(COMPRESSED_DIR, label, category)
             dst_dir = os.path.join(PROCESSED_DIR, label, category)
             os.makedirs(dst_dir, exist_ok=True)
  

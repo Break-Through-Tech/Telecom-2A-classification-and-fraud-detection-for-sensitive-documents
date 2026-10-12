@@ -15,6 +15,7 @@ ARCHIVE_PATH = os.path.join("data", "files-archive")
  
 RAW_DATA_DIR = "idnet_raw"
 SAMPLE_DIR = "idnet_sample"
+COMPRESSED_DIR = "idnet_sample_compressed"
 PROCESSED_DIR = "idnet_processed"
 MANIFEST_PATH = "idnet_processed_manifest.csv"
 FEATURES_PATH = "idnet_features.csv"
