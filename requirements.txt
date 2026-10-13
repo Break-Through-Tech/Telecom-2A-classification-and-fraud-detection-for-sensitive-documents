@@ -1,1 +1,12 @@
-
+opencv-python
+numpy
+pandas
+matplotlib
+seaborn
+scikit-learn
+scikit-image
+albumentations
+albumentations>=1.4
+kaggle
+requests
+Pillow
