@@ -133,7 +133,16 @@ def main():
     ap.add_argument("--max-images", type=int, default=300)
     ap.add_argument("--max-download-mb", type=int, default=300)
     ap.add_argument("--out", default="data/sample")
+    ap.add_argument(
+        "--include",
+        nargs="+",
+        default=None,
+        help="only save images whose path contains one of these substrings "
+        "(case-insensitive), e.g. --include /positive/ to get genuine docs",
+    )
+    ap.add_argument("--per-folder", type=int, default=25)
     args = ap.parse_args()
+    include = [s.lower() for s in args.include] if args.include else None
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -144,6 +153,7 @@ def main():
     downloaded = 0
     saved = 0
     seen_dirs = {}
+    seen_folders = set()
 
     def counting_chunks():
         nonlocal downloaded
@@ -161,18 +171,28 @@ def main():
             is_image = name.lower().endswith(IMAGE_SUFFIXES)
             is_dir = name.endswith("/")
 
+            folder = str(Path(name).parent)
+            if is_image and folder not in seen_folders:
+                seen_folders.add(folder)
+                print(
+                    f"reached {folder} (downloaded={downloaded/1e6:.0f}MB)",
+                    file=sys.stderr,
+                )
+
             if saved >= args.max_images:
                 for _ in unzipped_chunks:
                     pass
                 continue
 
-            if is_dir or not is_image:
+            if is_dir or not is_image or (
+                include and not any(s in name.lower() for s in include)
+            ):
                 for _ in unzipped_chunks:
                     pass
                 continue
 
             parent = str(Path(name).parent)
-            if seen_dirs.get(parent, 0) >= 25:
+            if seen_dirs.get(parent, 0) >= args.per_folder:
                 # cap per-folder to spread the budget across categories we do reach
                 for _ in unzipped_chunks:
                     pass
