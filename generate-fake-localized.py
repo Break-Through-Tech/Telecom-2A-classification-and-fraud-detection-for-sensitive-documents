@@ -10,7 +10,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import SAMPLE_DIR, CATEGORIES, SEED
 
 PATCH_FRACTION_RANGE = (0.08, 0.2)  # patch side length as a fraction of image side
+BLUR_KERNEL_RANGE = (15, 35)
 
+def _random_odd_kernel_size():
+    k = random.randint(*BLUR_KERNEL_RANGE)
+    return k if k % 2 == 1 else k + 1  # cv2.GaussianBlur requires an odd kernel size
 
 def _random_patch_size(h, w):
     frac = random.uniform(*PATCH_FRACTION_RANGE)
@@ -18,51 +22,27 @@ def _random_patch_size(h, w):
     pw = max(int(w * frac), 10)
     return min(ph, h), min(pw, w)
 
+def _random_odd_kernel_size():
+    k = random.randint(*BLUR_KERNEL_RANGE)
+    return k if k % 2 == 1 else k + 1  # cv2.GaussianBlur requires an odd kernel size
 
-def copy_move_tamper(image):
-    """Copy a patch from elsewhere in the same image over another region."""
+def partial_blur_tamper(image):
+    """Apply a strong Gaussian blur to one random patch, leaving the rest untouched."""
     h, w = image.shape[:2]
     ph, pw = _random_patch_size(h, w)
-
-    sy, sx = random.randint(0, h - ph), random.randint(0, w - pw)
-    patch = image[sy:sy + ph, sx:sx + pw].copy()
-
-    dy, dx = random.randint(0, h - ph), random.randint(0, w - pw)
-
+    y, x = random.randint(0, h - ph), random.randint(0, w - pw)
+    k = _random_odd_kernel_size()
     tampered = image.copy()
-    tampered[dy:dy + ph, dx:dx + pw] = patch
+    tampered[y:y + ph, x:x + pw] = cv2.GaussianBlur(image[y:y + ph, x:x + pw], (k, k), 0)
     return tampered
 
-
-def splice_tamper(image, donor_image):
-    """Copy a patch from a different document into this one."""
-    h, w = image.shape[:2]
-    ph, pw = _random_patch_size(h, w)
-
-    dh, dw = donor_image.shape[:2]
-    sph, spw = min(ph, dh), min(pw, dw)
-    sy, sx = random.randint(0, dh - sph), random.randint(0, dw - spw)
-    patch = donor_image[sy:sy + sph, sx:sx + spw]
-    patch = cv2.resize(patch, (pw, ph))  # match the target patch size exactly
-
-    dy, dx = random.randint(0, h - ph), random.randint(0, w - pw)
-
-    tampered = image.copy()
-    tampered[dy:dy + ph, dx:dx + pw] = patch
-    return tampered
-
-
-def make_fake_version(image, donor_image):
-    if random.random() < 0.5:
-        return copy_move_tamper(image)
-    return splice_tamper(image, donor_image)
+def make_fake_version(image):
+    return partial_blur_tamper(image)
 
 
 def generate_fakes():
     real_dir = os.path.join(SAMPLE_DIR, "real")
     fake_dir = os.path.join(SAMPLE_DIR, "fake")
-
-    all_real_files = glob.glob(os.path.join(real_dir, "*", "*.*"))
 
     for category in CATEGORIES.keys():
         real_files = glob.glob(os.path.join(real_dir, category, "*.*"))
@@ -74,18 +54,14 @@ def generate_fakes():
             if img is None:
                 continue
 
-            donor_path = random.choice([p for p in all_real_files if p != f])
-            donor_img = cv2.imread(donor_path)
-            if donor_img is None:
-                continue
-
-            fake_img = make_fake_version(img, donor_img)
+            fake_img = make_fake_version(img)
             fname = os.path.basename(f)
             cv2.imwrite(os.path.join(out_dir, fname), fake_img)
 
-        print(f"{category}: generated {len(real_files)} localized-tamper fake images")
+        print(f"{category}: generated {len(real_files)} localized-blur fake images")
 
-    print("\nLocalized-tamper fake documents ready at:", os.path.abspath(fake_dir))
+    print("\nLocalized-blur fake documents ready at:", os.path.abspath(fake_dir))
+
 
 
 if __name__ == "__main__":

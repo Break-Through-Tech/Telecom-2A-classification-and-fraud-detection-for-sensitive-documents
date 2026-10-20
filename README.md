@@ -10,11 +10,9 @@
 
 | Name             | GitHub Handle | Contribution                                                             |
 |------------------|---------------|--------------------------------------------------------------------------|
-| Taylor Nguyen    | @taylornguyen | Data exploration, visualization, overall project coordination            |
-| Jordan Ramirez   | @jramirez     | Data collection, exploratory data analysis (EDA), dataset documentation  |
-| Amina Hassan     | @aminahassan  | Data preprocessing, feature engineering, data validation                 |
-| Priya Mehta      | @pmehta       | Model selection, hyperparameter tuning, model training and optimization  |
-| Chris Park       | @chrispark    | Model evaluation, performance analysis, results interpretation           |
+| Margaret Cartee    | @margaret-ca | HOG/LBP feature extraction, synthetic fraud generation, model training            |
+| Abdullah Suleman   | @abdullahsulem    | Data collection, exploratory data analysis (EDA), dataset documentation  |
+| Aarav Rajeev Gupta     | @A-Arav0307 | Data preprocessing, feature engineering, data validation                 |
 
 ---
 

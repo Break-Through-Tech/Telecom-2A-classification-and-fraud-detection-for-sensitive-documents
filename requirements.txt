@@ -10,3 +10,4 @@ albumentations>=1.4
 kaggle
 requests
 Pillow
+xgboost
