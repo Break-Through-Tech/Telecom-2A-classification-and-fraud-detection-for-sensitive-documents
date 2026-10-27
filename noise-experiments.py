@@ -140,7 +140,7 @@ def main():
         sys.exit("No readable images in %s/real/. Run the earlier pipeline steps first." % COMPRESSED_DIR)
     print("Loaded %d real images" % len(real_imgs))
 
-    real_feats = np.array([features(to_gray_resized(im)) for im in real_imgs])
+    real_feats = np.array([features(to_gray_resized(webp_roundtrip(im))) for im in real_imgs])
 
     rows = []
     for name, fn in CONDITIONS.items():
