@@ -1,0 +1,7 @@
+condition,accuracy,roc_auc,roc_auc_std,top_feature_importance,features_for_50pct_importance,total_features
+control_no_noise,0.997,1.0,0.0,0.0071,206,8110
+gaussian_blur_whole,1.0,1.0,0.0,0.0231,85,8110
+impulse_whole,1.0,1.0,0.0,0.0158,88,8110
+impulse_local,0.998,1.0,0.0,0.0088,251,8110
+poisson_whole,1.0,1.0,0.0,0.0182,91,8110
+poisson_local,0.997,1.0,0.0,0.0092,286,8110
