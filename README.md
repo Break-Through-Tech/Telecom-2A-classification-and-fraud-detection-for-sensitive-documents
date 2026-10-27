@@ -30,11 +30,7 @@
 
 **Provide step-by-step instructions so someone else can run your code and reproduce your results. Depending on your setup, include:**
 
-1. **Clone the repository and check out the project branch:**
-   ```bash
-   git clone <repo-url>
-   cd Telecom-2A-classification-and-fraud-detection-for-sensitive-documents
-   ```
+1. **Clone the repository**
 
 2. **Install dependencies:**
    ```bash
