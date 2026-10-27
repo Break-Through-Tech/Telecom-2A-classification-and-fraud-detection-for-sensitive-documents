@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -19,7 +19,12 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
 from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import FEATURES_PATH, SEED
@@ -37,6 +42,10 @@ def build_models():
     return {
         "Random Forest": RandomForestClassifier(n_estimators=N_ESTIMATORS, random_state=SEED),
         "XGBoost": XGBClassifier(n_estimators=N_ESTIMATORS, random_state=SEED, eval_metric="logloss"),
+        "LightGBM": LGBMClassifier(n_estimators=N_ESTIMATORS, random_state=SEED, verbosity=-1),
+        "Decision Tree": DecisionTreeClassifier(random_state=SEED),
+        "AdaBoost": AdaBoostClassifier(n_estimators=N_ESTIMATORS, random_state=SEED),
+        "Gaussian Naive Bayes": GaussianNB(),
         "Logistic Regression": Pipeline([
             ("scaler", StandardScaler()),
             ("clf", LogisticRegression(max_iter=1000, random_state=SEED)),
@@ -44,6 +53,14 @@ def build_models():
         "SVM (linear)": Pipeline([
             ("scaler", StandardScaler()),
             ("clf", SVC(kernel="linear", random_state=SEED)),
+        ]),
+        "K-Nearest Neighbors": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", KNeighborsClassifier(n_neighbors=5)),
+        ]),
+        "Neural Network (MLP)": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, random_state=SEED)),
         ]),
     }
 

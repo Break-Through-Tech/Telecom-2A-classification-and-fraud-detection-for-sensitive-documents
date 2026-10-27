@@ -11,3 +11,4 @@ kaggle
 requests
 Pillow
 xgboost
+lightgbm
