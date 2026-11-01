@@ -21,7 +21,7 @@ MANIFEST_PATH = "idnet_processed_manifest.csv"
 FEATURES_PATH = "idnet_features.csv"
  
 # --- Sampling settings ---
-N_PER_CATEGORY = 200   # 200 images x 3 categories ~= 600 images total
+N_PER_CATEGORY = 300   # 200 images x 3 categories ~= 600 images total
 SEED = 42
  
 # --- Preprocessing settings ---
