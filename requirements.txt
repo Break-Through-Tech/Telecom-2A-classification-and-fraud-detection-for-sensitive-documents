@@ -12,3 +12,5 @@ requests
 Pillow
 xgboost
 lightgbm
+requests
+stream-unzip
