@@ -12,3 +12,6 @@ requests
 Pillow
 torch
 torchvision
+xgboost
+lightgbm
+stream-unzip

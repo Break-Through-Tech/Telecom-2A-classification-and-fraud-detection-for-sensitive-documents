@@ -49,8 +49,6 @@ def compress_all(source_dir: str = SAMPLE_DIR, dest_dir: str = COMPRESSED_DIR, q
                 before_size = os.path.getsize(src_path)
                 compress_local_image(src_path, dest_path, quality=quality)
                 after_size = os.path.getsize(dest_path)
-
-                os.remove(src_path)
  
                 total_before += before_size
                 total_after += after_size
@@ -58,10 +56,7 @@ def compress_all(source_dir: str = SAMPLE_DIR, dest_dir: str = COMPRESSED_DIR, q
             except Exception as e:
                 print(f"FAILED on {src_path}: {e}")
                 n_failed += 1
-    
-    for root, dirs, files in os.walk(source_dir, topdown=False):
-        if not dirs and not files and root != source_dir:
-            os.rmdir(root)
+
  
     print(f"\nConverted {n_converted} images ({n_failed} failed).")
     if total_before > 0:
