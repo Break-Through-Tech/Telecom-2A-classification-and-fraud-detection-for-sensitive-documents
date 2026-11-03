@@ -1,0 +1,27 @@
+{
+  "accuracy": 0.98,
+  "precision": 0.9615384615384616,
+  "recall": 1.0,
+  "f1": 0.9803921568627451,
+  "roc_auc": 0.9950222222222221,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+      72,
+      3
+    ],
+    [
+      0,
+      75
+    ]
+  ],
+  "recall_by_forgery_type": {
+    "fraud3_face_replacement": 1.0,
+    "fraud4_combined": 1.0,
+    "fraud5_inpaint_and_rewrite": 1.0
+  },
+  "args": {
+    "model": "svm_rbf",
+    "reencode": 0,
+    "folds": 5
+  }
+}

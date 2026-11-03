@@ -20,7 +20,7 @@ planned milestones:
 2. an ai agent that calls the classifier to flag fraud on submitted documents
 3. multi-class classification of document type (passport, driver's license, national id)
 
-current focus: a cnn that distinguishes genuine from fake passports. no model is trained in this repository right now. earlier model-training code was removed so the cnn can be built from scratch.
+current focus: a cnn that distinguishes genuine from fake passports (see `deep learning algorithms/`). a classical hog/lbp baseline is included for comparison.
 
 ## data
 
@@ -43,6 +43,29 @@ local samples in this repository:
 - preprocessed images to grayscale and 256x256, and wrote a manifest (`preprocess.py`).
 - extracted hog and lbp features (`extract-features.py`).
 - explored the data (`exploration.ipynb`) and prototyped the sampling and preprocessing steps in colab (`preprocessing_pipeline.ipynb`, with its model-training cells removed).
+
+## model results (grc passports, 75 genuine + 75 real idnet forgeries)
+
+5-fold cross-validation grouped by photo id (a document and its forged copy never straddle the split). full table in `deep learning algorithms/results_table.md`, plots in `roc_curves.png` and `confusion_best.png`.
+
+| model | accuracy | f1 | roc-auc | face-replacement recall |
+|---|---|---|---|---|
+| resnet50 (best cnn) | 0.953 | 0.952 | 0.980 | 0.76 |
+| resnet50, jpeg-reencoded | 0.933 | 0.932 | 0.982 | 0.72 |
+| resnet18 | 0.907 | 0.901 | 0.969 | 0.56 |
+| efficientnet-b0 | 0.860 | 0.851 | 0.939 | 0.40 |
+| hog+lbp random forest | 1.000 | 1.000 | 1.000 | 1.00 |
+| hog+lbp svm / logreg | 0.98 / 0.99 | 0.98 / 0.99 | 0.995 / 1.000 | 1.00 / 0.96 |
+
+caveats: only 150 images from one document template, so these numbers are optimistic and noisy. the near-perfect hog/lbp score on a fixed-layout template should not be read as proof the classifier generalizes; it needs more data and other countries before it is trusted. genuine images are png and one forgery type is jpg, so every model was also run with all images re-encoded as jpeg; results barely changed.
+
+## cnn scripts (`deep learning algorithms/`)
+
+- `train_cnn.py` : cross-validated training (`--arch resnet18|resnet50|effnet_b0`, `--reencode 90`), or `--final` to train on all data and save `<name>.pt`
+- `baseline_hog_lbp.py` : hog/lbp features with svm, random forest, logistic regression, same split and metrics
+- `predict.py` : `ForgeryClassifier("final_r50.pt").predict(path)` returns label and fake probability (entry point for the agent milestone)
+- `make_report.py` : builds `results_table.md`, `roc_curves.png`, `confusion_best.png`
+- the trained weights (`final_r50.pt`, about 90 mb) are not committed; recreate with `python train_cnn.py --arch resnet50 --final --name final_r50`
 
 ## repository layout
 
@@ -70,8 +93,7 @@ the genuine images in the grc archive start about 5 gb into the download.
 
 ## next steps
 
-- build and train a cnn for passports that classifies genuine vs fake.
-- split train and test by document so that no document and its altered copy appear on both sides.
-- keep color and a higher resolution than 256x256, since forged regions can be small.
-- evaluate with accuracy, precision, recall, f1, roc-auc, and a confusion matrix.
+- get more forged passports and other countries/document types, then re-check the cnn and baseline.
+- improve face-replacement detection (the weakest forgery type).
+- build the ai agent that calls `predict.py`.
 - later milestones: the ai agent, then multi-class document type classification.
