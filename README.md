@@ -64,8 +64,39 @@ caveats: only 150 images from one document template, so these numbers are optimi
 - `train_cnn.py` : cross-validated training (`--arch resnet18|resnet50|effnet_b0`, `--reencode 90`), or `--final` to train on all data and save `<name>.pt`
 - `baseline_hog_lbp.py` : hog/lbp features with svm, random forest, logistic regression, same split and metrics
 - `predict.py` : `ForgeryClassifier("final_r50.pt").predict(path)` returns label and fake probability (entry point for the agent milestone)
+- `noise_experiment.py` / `plot_noise.py` : noise comparison above and its heatmap
 - `make_report.py` : builds `results_table.md`, `roc_curves.png`, `confusion_best.png`
 - the trained weights (`final_r50.pt`, about 90 mb) are not committed; recreate with `python train_cnn.py --arch resnet50 --final --name final_r50`
+
+## noise comparison (300 genuine passports)
+
+`idnet_sample/` now holds 300 genuine passports and 300 fakes made by `generate-fake.py` (blur, noise, compression, dropout). `deep learning algorithms/noise_experiment.py` builds extra fakes by adding gaussian, poisson, or salt-and-pepper noise to the same genuine passports, each at a mild and a moderate level. A resnet18 (402x568 input, 8 epochs) is trained on one fake type and tested on all of them, with 5-fold cross-validation split by passport. rows = training fakes, columns = test fakes. heatmap: `deep learning algorithms/noise_heatmap.png`.
+
+accuracy:
+
+| train \ test | gauss mild | gauss mod | poisson mild | poisson mod | s&p mild | s&p mod | generate_fake |
+|---|---|---|---|---|---|---|---|
+| gaussian (mod) | 0.500 | 1.000 | 0.500 | 1.000 | 0.500 | 1.000 | 0.500 |
+| poisson (mod) | 0.500 | 1.000 | 0.500 | 1.000 | 0.500 | 1.000 | 0.500 |
+| salt & pepper (mod) | 0.500 | 0.500 | 0.500 | 0.542 | 0.500 | 1.000 | 0.500 |
+| generate_fake | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.945 |
+
+roc-auc:
+
+| train \ test | gauss mild | gauss mod | poisson mild | poisson mod | s&p mild | s&p mod | generate_fake |
+|---|---|---|---|---|---|---|---|
+| gaussian (mod) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.617 |
+| poisson (mod) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.604 |
+| salt & pepper (mod) | 0.943 | 1.000 | 0.985 | 1.000 | 1.000 | 1.000 | 0.555 |
+| generate_fake | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 | 0.994 |
+
+takeaways:
+
+- a model trained on one moderate noise type detects the other moderate noise types perfectly, so gaussian, poisson, and salt-and-pepper are easy for the cnn to tell apart from a clean passport.
+- accuracy of 0.500 with roc-auc near 1.0 on the mild columns means the model ranks noisy images above clean ones but its scores fall under the 0.5 cutoff. the threshold would need recalibrating for mild noise.
+- none of the noise-trained models transfer to the `generate_fake` fakes (auc 0.55-0.62), which are blur and compression based.
+- training on `generate_fake` generalizes to every noise type (accuracy 1.0) and reaches 0.945 accuracy / 0.994 auc on its own fakes, so it is the most robust training set.
+- caveat: these are all synthetic degradations of a clean image, which is much easier than the real idnet forgeries above. high scores here do not mean forged documents will be caught.
 
 ## repository layout
 
