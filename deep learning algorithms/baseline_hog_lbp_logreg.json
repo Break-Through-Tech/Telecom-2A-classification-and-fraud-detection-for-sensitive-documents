@@ -1,0 +1,27 @@
+{
+  "accuracy": 0.9933333333333333,
+  "precision": 1.0,
+  "recall": 0.9866666666666667,
+  "f1": 0.9932885906040269,
+  "roc_auc": 1.0,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+      75,
+      0
+    ],
+    [
+      1,
+      74
+    ]
+  ],
+  "recall_by_forgery_type": {
+    "fraud3_face_replacement": 0.96,
+    "fraud4_combined": 1.0,
+    "fraud5_inpaint_and_rewrite": 1.0
+  },
+  "args": {
+    "model": "logreg",
+    "reencode": 0,
+    "folds": 5
+  }
+}

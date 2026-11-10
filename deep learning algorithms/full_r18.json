@@ -1,0 +1,35 @@
+{
+  "accuracy": 0.9,
+  "precision": 0.9411764705882353,
+  "recall": 0.8533333333333334,
+  "f1": 0.8951048951048951,
+  "roc_auc": 0.9605333333333334,
+  "confusion_matrix [[TN,FP],[FN,TP]]": [
+    [
+      71,
+      4
+    ],
+    [
+      11,
+      64
+    ]
+  ],
+  "recall_by_forgery_type": {
+    "fraud3_face_replacement": 0.56,
+    "fraud4_combined": 1.0,
+    "fraud5_inpaint_and_rewrite": 1.0
+  },
+  "args": {
+    "epochs": 10,
+    "bs": 4,
+    "lr": 0.0001,
+    "folds": 5,
+    "arch": "resnet18",
+    "hw": [
+      803,
+      1136
+    ],
+    "crop": false,
+    "name": "full_r18"
+  }
+}

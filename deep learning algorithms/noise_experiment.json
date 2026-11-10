@@ -1,0 +1,227 @@
+{
+  "args": {
+    "arch": "resnet18",
+    "epochs": 8,
+    "bs": 8,
+    "lr": 0.0001,
+    "folds": 5,
+    "hw": [
+      402,
+      568
+    ],
+    "limit": 0,
+    "train_on": [
+      "gaussian_mod",
+      "poisson_mod",
+      "saltpepper_mod",
+      "generate_fake"
+    ],
+    "name": "noise_experiment"
+  },
+  "results": {
+    "gaussian_mod": {
+      "gaussian_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "gaussian_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "generate_fake": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.6170666666666668
+      }
+    },
+    "poisson_mod": {
+      "gaussian_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.9999888888888889
+      },
+      "gaussian_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "generate_fake": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.6035000000000001
+      }
+    },
+    "saltpepper_mod": {
+      "gaussian_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.9425111111111112
+      },
+      "gaussian_mod": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.9846555555555556
+      },
+      "poisson_mod": {
+        "accuracy": 0.5416666666666666,
+        "precision": 1.0,
+        "recall": 0.08333333333333333,
+        "f1": 0.15384615384615385,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mild": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "generate_fake": {
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.5554666666666668
+      }
+    },
+    "generate_fake": {
+      "gaussian_mild": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "gaussian_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mild": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "poisson_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mild": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "saltpepper_mod": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "roc_auc": 1.0
+      },
+      "generate_fake": {
+        "accuracy": 0.945,
+        "precision": 1.0,
+        "recall": 0.89,
+        "f1": 0.9417989417989417,
+        "roc_auc": 0.9939222222222222
+      }
+    }
+  }
+}
