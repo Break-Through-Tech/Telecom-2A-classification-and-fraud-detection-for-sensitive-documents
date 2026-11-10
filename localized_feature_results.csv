@@ -1,0 +1,4 @@
+Model,Accuracy,ROC-AUC
+HOG + Logistic Regression,0.875,0.9408
+LBP + Logistic Regression,0.655,0.6305000000000001
+HOG + Decision Tree,0.905,0.905
