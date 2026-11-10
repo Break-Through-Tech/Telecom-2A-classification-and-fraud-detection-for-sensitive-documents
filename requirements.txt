@@ -14,4 +14,7 @@ torch
 torchvision
 xgboost
 lightgbm
+requests
 stream-unzip
+hashlib
+argparse
