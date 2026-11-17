@@ -22,6 +22,7 @@ Run from the project root:
 """
 
 import os
+import hashlib
 import random
 import struct
 import sys
@@ -33,7 +34,8 @@ import requests
 from stream_unzip import TruncatedDataError, stream_unzip
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import ARCHIVE_PATH, SAMPLE_DIR, CATEGORIES, N_PER_CATEGORY, SEED
+from config import ARCHIVE_PATH, SAMPLE_DIR, SAMPLE_MANIFEST_PATH, CATEGORIES, N_PER_CATEGORY, SEED, require_empty_outputs
+import pandas as pd
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 
@@ -46,16 +48,45 @@ IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 POSITIVE_PATH_MARKER = "positive"
 FRAUD_PATH_MARKER = "fraud"
 
+def _is_genuine_path(name):
+    parts = name.replace("\\", "/").lower().split("/")
+    return "positive" in parts and not any(p.startswith("fraud") for p in parts)
 
 def _filter_genuine_images(image_names):
-    """Keep only images under an explicit 'positive' subfolder when one
-    exists. If a code has no folder with that name, fall back to excluding
-    anything path-tagged as fraud, so a differently-named code doesn't
-    silently yield zero images."""
-    positive_only = [n for n in image_names if POSITIVE_PATH_MARKER in n.lower()]
-    if positive_only:
-        return positive_only
-    return [n for n in image_names if FRAUD_PATH_MARKER not in n.lower()]
+    # Fail closed: unknown folder names do not establish a genuine label.
+    return [name for name in image_names if _is_genuine_path(name)]
+
+
+def _save_sample(data, name, code, category, container):
+    if not _is_genuine_path(name):
+        raise ValueError(f"Unverified genuine archive path: {name}")
+    member_id = hashlib.sha256((container + ":" + name).encode("utf-8")).hexdigest()[:24]
+    filename = f"{code}_{member_id}_{name.replace(chr(92), '/').rsplit('/', 1)[-1]}"
+    directory = Path(SAMPLE_DIR) / "real" / category
+    directory.mkdir(parents=True, exist_ok=True)
+    destination = directory / filename
+    destination.write_bytes(data)
+    return {
+        "filepath": str(destination.resolve()), "label": "real",
+        "document_type": category, "code": code,
+        "archive_container": container, "archive_member": name,
+        "source_file_sha256": hashlib.sha256(data).hexdigest(),
+    }
+
+
+def _publish_samples(records):
+    frame = pd.DataFrame(records)
+    if frame.empty or set(frame["document_type"]) != set(CATEGORIES):
+        raise ValueError("Sampling did not produce every configured category")
+    if frame["filepath"].duplicated().any():
+        raise ValueError("Duplicate archive destinations; inspect archive members")
+    destination = Path(SAMPLE_MANIFEST_PATH)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(".csv.tmp")
+    frame.to_csv(temporary, index=False)
+    os.replace(temporary, destination)
+    print(f"Published {len(frame)} verified-source records: {destination}")
+    return frame
 
 
 # --- Kaggle streaming fallback, used when ARCHIVE_PATH doesn't exist locally ---
@@ -188,6 +219,7 @@ def stream_sample_from_kaggle():
     images per code as they're encountered in archive order."""
     code_to_category = {code: category for category, codes in CATEGORIES.items() for code in codes}
     counts = {code: 0 for code in code_to_category}
+    records = []
 
     print("Requesting signed download URL from Kaggle...")
     url = _get_signed_kaggle_url()
@@ -215,7 +247,7 @@ def stream_sample_from_kaggle():
 
             matched_code = next((c for c in code_to_category if name.startswith(f"{c}/")), None)
             is_image = name.lower().endswith(IMAGE_EXTENSIONS)
-            is_genuine = POSITIVE_PATH_MARKER in name.lower()
+            is_genuine = _is_genuine_path(name)
             is_wanted = matched_code and is_image and is_genuine and counts[matched_code] < N_PER_CATEGORY
 
             if not is_wanted:
@@ -225,11 +257,7 @@ def stream_sample_from_kaggle():
 
             data = b"".join(unzipped_chunks)
             category = code_to_category[matched_code]
-            out_dir = os.path.join(SAMPLE_DIR, "real", category)
-            os.makedirs(out_dir, exist_ok=True)
-            out_name = f"{matched_code}_{os.path.basename(name)}"
-            with open(os.path.join(out_dir, out_name), "wb") as f:
-                f.write(data)
+            records.append(_save_sample(data, name, matched_code, category, KAGGLE_DATASET))
             counts[matched_code] += 1
             print(
                 f"[{matched_code}] streamed {counts[matched_code]}/{N_PER_CATEGORY} -> "
@@ -239,22 +267,15 @@ def stream_sample_from_kaggle():
             if all(counts[c] >= N_PER_CATEGORY for c in code_to_category):
                 print("All categories filled -- stopping stream early.")
                 break
-    except TruncatedDataError:
-        # The byte stream ended mid-entry -- either the MAX_DOWNLOAD_MB cap was
-        # hit (see the message printed by counting_chunks above) or the
-        # connection dropped. Either way, report what was actually collected
-        # instead of crashing with no summary; whatever was already written to
-        # disk before this point is still valid.
-        print(
-            "Stream ended before every category was filled (hit the download "
-            "cap or a connection drop) -- here's what was collected before that:"
-        )
-
-    for code, n in counts.items():
-        if n < N_PER_CATEGORY:
-            print(f"WARNING: only found {n}/{N_PER_CATEGORY} genuine images for code '{code}' before the stream ended.")
-
-    print("\nStreamed sample ready at:", os.path.abspath(SAMPLE_DIR))
+    except TruncatedDataError as error:
+        raise RuntimeError(
+            "Download ended early; no sample manifest was published. "
+            "Move the incomplete sample folder aside and retry."
+        ) from error
+    if any(counts[c] < N_PER_CATEGORY for c in code_to_category):
+        raise RuntimeError(f"Incomplete streamed sample: {counts}; no manifest published")
+    return records
+ 
 
 
 def list_available_codes():
@@ -297,44 +318,41 @@ def sample_code(code, category, n_images):
                 random.shuffle(image_names)
                 chosen = image_names[:n_images]
 
-                out_dir = os.path.join(SAMPLE_DIR, "real", category)
-                os.makedirs(out_dir, exist_ok=True)
-
-                for name in chosen:
-                    data = inner_zip.read(name)
-                    # Prefix with the code so filenames from different codes never collide
-                    out_name = f"{code}_{os.path.basename(name)}"
-                    with open(os.path.join(out_dir, out_name), "wb") as f:
-                        f.write(data)
-
-                print(f"[{code}] sampled {len(chosen)} of {len(image_names)} available images -> '{category}'")
+                if not chosen:
+                    raise ValueError(f"No verified positive images for {code}")
+                records = [
+                    _save_sample(inner_zip.read(name), name, code, category, inner_zip_name)
+                    for name in chosen
+                ]
+                print(f"[{code}] sampled {len(chosen)} of {len(image_names)} verified images")
+                return records
 
 
 def sample_dataset():
     random.seed(SEED)
+    require_empty_outputs(SAMPLE_DIR, SAMPLE_MANIFEST_PATH)
 
     if not os.path.exists(ARCHIVE_PATH):
         print(f"No local archive at '{ARCHIVE_PATH}' -- streaming directly from Kaggle instead.")
-        stream_sample_from_kaggle()
-        return
+        return _publish_samples(stream_sample_from_kaggle())
 
     available_codes = set(list_available_codes())
     print("Codes found in archive:", sorted(available_codes))
 
+    records = []
     for category, codes in CATEGORIES.items():
         codes_present = [c for c in codes if c in available_codes]
         missing = [c for c in codes if c not in available_codes]
         if missing:
-            print(f"WARNING: '{category}' expects codes {missing}, but they're not in the archive.")
+            raise ValueError(f"Missing configured archive codes for {category}: {missing}")
         if not codes_present:
             print(f"WARNING: no codes available for '{category}' -- skipping.")
             continue
 
         n_per_code = max(1, N_PER_CATEGORY // len(codes_present))
         for code in codes_present:
-            sample_code(code, category, n_per_code)
-
-    print("\nLocal sample ready at:", os.path.abspath(SAMPLE_DIR))
+            records.extend(sample_code(code, category, n_per_code))
+    return _publish_samples(records)
 
 
 if __name__ == "__main__":

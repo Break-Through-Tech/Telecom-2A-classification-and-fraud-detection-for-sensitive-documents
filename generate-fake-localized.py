@@ -1,13 +1,15 @@
-import glob
 import os
 import random
 import sys
+import hashlib
+from pathlib import Path
 
 import cv2
 import numpy as np
+import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import SAMPLE_DIR, CATEGORIES, SEED
+from config import SAMPLE_DIR, CATEGORIES, SEED, N_FOLDS, SAMPLE_MANIFEST_PATH, GENERATED_MANIFEST_PATH, require_empty_outputs
 
 PATCH_FRACTION_RANGE = (0.08, 0.2)   # patch side length as a fraction of image side
 BLUR_KERNEL_RANGE = (15, 35)         # Gaussian blur kernel size in pixels (odd values only)
@@ -26,10 +28,6 @@ def _random_patch_size(h, w):
     ph = max(int(h * frac), 10)
     pw = max(int(w * frac), 10)
     return min(ph, h), min(pw, w)
-
-def _random_odd_kernel_size():
-    k = random.randint(*BLUR_KERNEL_RANGE)
-    return k if k % 2 == 1 else k + 1  # cv2.GaussianBlur requires an odd kernel size
 
 def partial_blur_tamper(image):
     """Apply a strong Gaussian blur to one random patch, leaving the rest untouched."""
@@ -83,7 +81,12 @@ def copy_move_tamper(image):
     sy, sx = random.randint(0, h - ph), random.randint(0, w - pw)
     patch = image[sy:sy + ph, sx:sx + pw].copy()
 
-    dy, dx = random.randint(0, h - ph), random.randint(0, w - pw)
+    for _ in range(100):
+        dy, dx = random.randint(0, h - ph), random.randint(0, w - pw)
+        if dy + ph <= sy or sy + ph <= dy or dx + pw <= sx or sx + pw <= dx:
+            break
+    else:
+        raise ValueError("Cannot place a non-overlapping copy-move patch")
 
     tampered = image.copy()
     tampered[dy:dy + ph, dx:dx + pw] = patch
@@ -147,40 +150,153 @@ def make_fake_version(image, donor_image):
 
     return fake_img, tamper_type
 
+def prepare_dataset(sample_dir, categories, seed, manifest_path, make_fake):
+    random.seed(seed)
+    np.random.seed(seed)
+    root = Path(sample_dir).resolve()
+    source_root = root / 'real'
+    output_root = root
+    require_empty_outputs(root / 'fake', manifest_path)
+    records = []
+    identities = {}
+    provenance = {}
+    samples = pd.read_csv(SAMPLE_MANIFEST_PATH)
+    required = {"filepath", "document_type", "archive_member", "source_file_sha256"}
+    if samples.empty or not required.issubset(samples):
+        raise ValueError("Run verified sampling first")
+    for row in samples.to_dict("records"):
+        path = Path(row["filepath"])
+        parts = str(row["archive_member"]).replace("\\", "/").lower().split("/")
+        if "positive" not in parts or any(p.startswith("fraud") for p in parts):
+            raise ValueError(f"Unverified genuine source: {path}")
+        if hashlib.sha256(path.read_bytes()).hexdigest() != row["source_file_sha256"]:
+            raise ValueError(f"Sample bytes changed since sampling: {path}")
+        category = row["document_type"]
+        if category not in categories:
+            raise ValueError(f"Unexpected category: {category}")
+        image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError(f"Unreadable source: {path}")
+        digest = hashlib.sha256(str(image.shape).encode("ascii") + image.tobytes())
+        source_id = digest.hexdigest()
+        identities.setdefault(source_id, (category, path))
+        provenance[str(path)] = row
+        records.append((category, path, source_id))
+
+    if not records:
+        raise ValueError(f'No readable source images in {source_root}')
+
+    rng = random.Random(seed)
+    folds = {}
+    development_offset = 0
+    test_offset = 0
+    for category in sorted(categories):
+        ids = sorted(k for k, (cat, _) in identities.items() if cat == category)
+        rng.shuffle(ids)
+        for i, source_id in enumerate(ids):
+            # Every fifth distinct source is held out before fake generation.
+            # Carry offsets between categories to accommodate small categories.
+            if (test_offset + i) % 5 == 0:
+                folds[source_id] = -1
+            else:
+                folds[source_id] = development_offset % N_FOLDS
+                development_offset += 1
+        test_offset = (test_offset + len(ids)) % 5
+
+    pools = {
+        fold: [sid for sid in identities if folds[sid] == fold]
+        for fold in [-1, *range(N_FOLDS)]
+    }
+    if any(len(pool) < 2 for pool in pools.values()):
+        raise ValueError(
+            'Not enough distinct originals: test and every development fold '
+            'need at least two sources for same-partition splicing. '
+            'Add sources or reduce N_FOLDS consistently in both scripts.'
+        )
+
+    rows = []
+    for category, path, source_id in records:
+        image = cv2.imread(str(path), cv2.IMREAD_COLOR)
+        if image is None:
+            raise ValueError(f'Input became unreadable: {path}')
+        fold = folds[source_id]
+        donor_ids = [sid for sid in pools[fold] if sid != source_id]
+        # Retry only exact no-ops; retain subtle edits and report their magnitude.
+        for _ in range(10):
+            donor_id = random.choice(donor_ids)
+            donor_path = identities[donor_id][1]
+            donor = cv2.imread(str(donor_path), cv2.IMREAD_COLOR)
+            if donor is None:
+                raise ValueError(f'Unreadable donor: {donor_path}')
+            before = image.copy()
+            donor_before = donor.copy()
+            fake, tamper_type = make_fake(image, donor)
+            if not np.array_equal(image, before) or not np.array_equal(donor, donor_before):
+                raise RuntimeError(f"{tamper_type} mutated a source or donor in place")
+            changed = np.any(fake != image, axis=2)
+            if changed.any():
+                break
+        else:
+            raise ValueError(f'Ten exact no-op edits for {path}; inspect source')
+
+        ys, xs = np.nonzero(changed)
+        difference = np.abs(fake.astype(np.float32) - image.astype(np.float32))
+        sample_record = provenance[str(path)]
+        metadata = {
+            'archive_container': sample_record.get('archive_container', ''),
+            'archive_member': sample_record['archive_member'],
+            'source_file_sha256': sample_record['source_file_sha256'],
+            'source_id': source_id,
+            'source_filepath': str(path),
+            'fold_id': fold,
+            'split': 'test' if fold == -1 else 'development',
+            'document_type': category,
+        }
+        # Hash the relative path as well to distinguish duplicate source files.
+        path_id = hashlib.sha256(
+            path.relative_to(source_root).as_posix().encode('utf-8')
+        ).hexdigest()
+        for label, kind, pixels in [(0, 'real', image), (1, 'fake', fake)]:
+            if label:
+                destination = output_root / 'fake' / category / f'{path_id}.png'
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                if not cv2.imwrite(str(destination), pixels):
+                    raise OSError(f'Failed to save {destination}')
+            else:
+                # Reuse the verified real input; never write into the real folder.
+                destination = path
+            row = dict(metadata, filepath=str(destination), label=kind, artifact_sha256=hashlib.sha256(destination.read_bytes()).hexdigest())
+            row.update({
+                'tamper_type': tamper_type if label else 'none',
+                'donor_id': donor_id if label and tamper_type == 'splice' else '',
+                'changed_fraction': float(changed.mean()) if label else 0.0,
+                'mean_abs_change': float(difference.mean()) if label else 0.0,
+                'changed_mean_abs_change': (
+                    float(difference[changed].mean()) if label else 0.0
+                ),
+                # Bounding box of changed pixels, not the requested edit patch.
+                'changed_x': int(xs.min()) if label else -1,
+                'changed_y': int(ys.min()) if label else -1,
+                'changed_width': int(xs.max() - xs.min() + 1) if label else 0,
+                'changed_height': int(ys.max() - ys.min() + 1) if label else 0,
+            })
+            rows.append(row)
+
+    manifest = pd.DataFrame(rows)
+    destination = Path(manifest_path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(destination.name + '.tmp')
+    manifest.to_csv(temporary, index=False)
+    os.replace(temporary, destination)
+    print(f'Prepared {len(manifest)} images; labels: real/fake')
+    print(manifest.groupby(['fold_id', 'label']).size().to_string())
+    print('Reserve split=test; use fold_id for development CV only.')
+    return manifest
 
 def generate_fakes():
-    real_dir = os.path.join(SAMPLE_DIR, "real")
-    fake_dir = os.path.join(SAMPLE_DIR, "fake")
-
-    all_real_files = glob.glob(os.path.join(real_dir, "*", "*.*"))
-
-    for category in CATEGORIES.keys():
-        real_files = glob.glob(os.path.join(real_dir, category, "*.*"))
-        out_dir = os.path.join(fake_dir, category)
-        os.makedirs(out_dir, exist_ok=True)
-
-        tamper_counts = {t: 0 for t in TAMPER_TYPES}
-
-        for f in real_files:
-            img = cv2.imread(f)
-            if img is None:
-                continue
-
-            donor_path = random.choice([p for p in all_real_files if p != f])
-            donor_img = cv2.imread(donor_path)
-            if donor_img is None:
-                continue
-
-            fake_img, tamper_type = make_fake_version(img, donor_img)
-            tamper_counts[tamper_type] += 1
-
-            fname = os.path.basename(f)
-            cv2.imwrite(os.path.join(out_dir, fname), fake_img)
-
-        print(f"{category}: generated {len(real_files)} fake images")
-        print(f"  tamper type breakdown: {tamper_counts}")
-
-    print("\nRandomized localized-tamper fake documents ready at:", os.path.abspath(fake_dir))
+    return prepare_dataset(
+        SAMPLE_DIR, CATEGORIES, SEED, GENERATED_MANIFEST_PATH, make_fake_version
+    )
 
 
 if __name__ == "__main__":
