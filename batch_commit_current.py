@@ -1,12 +1,13 @@
+#!/usr/bin/env python3
 """Commit pending Git changes in small batches; optionally push each batch.
 
 Run from your repository (or pass --repo PATH). No third-party packages needed.
 
-  python batch_commit.py --dry-run
-  python batch_commit.py --batch-size 100
-  python batch_commit.py --batch-size 100 --push
+  python batch_commit_current.py --dry-run
+  python batch_commit_current.py --batch-size 100
+  python batch_commit_current.py --batch-size 100 --push
 
-Skips the four paths in EXCLUDED_PATHS, including already-staged changes.
+Skips the paths in EXCLUDED_PATHS, including already-staged changes.
 Includes new, modified, deleted, and already-staged files, honoring Git ignores
 for untracked files. Each selected path includes all its current edits, including
 any edits that were previously only partially staged. Existing commits are not
@@ -23,10 +24,12 @@ import time
 
 # Repository-relative paths. Git reports forward slashes on Windows too.
 EXCLUDED_PATHS = (
-    b'data/files-archive',
-    b'data/files-archive.zip',
+    b'sample_manifest.csv',
     b'idnet_features.csv',
     b'idnet_processed_manifest.csv',
+    b'generated_manifest.csv',
+    b'original-features',
+    b'data'
 )
 
 
@@ -221,4 +224,5 @@ if __name__ == '__main__':
         print('\nStopped. Completed commits remain local; rerun to continue.', file=sys.stderr)
         sys.exit(130)
     except (GitError, OSError) as error:
-        pass
+        print(f'\nStopped: {error}', file=sys.stderr)
+        sys.exit(1)
