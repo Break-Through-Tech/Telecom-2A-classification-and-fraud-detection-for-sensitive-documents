@@ -17,3 +17,5 @@ lightgbm
 requests
 stream-unzip
 streamlit
+langgraph
+langchain-ollama

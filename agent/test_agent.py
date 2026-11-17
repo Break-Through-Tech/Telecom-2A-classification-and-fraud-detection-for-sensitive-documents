@@ -38,13 +38,16 @@ class FakeOllama(BaseHTTPRequestHandler):
         req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         FakeOllama.calls += 1
         if req.get("tools") and not any(m["role"] == "tool" for m in req["messages"]):
-            self._send({"message": {"role": "assistant", "content": "", "tool_calls": [
-                {"function": {"name": "scan_summary", "arguments": {}}}]}})
+            self._send({"model": "fake", "done": True, "done_reason": "stop", "message": {
+                "role": "assistant", "content": "", "tool_calls": [
+                    {"function": {"name": "scan_summary", "arguments": {}}}]}})
         elif req.get("tools"):
             tool_out = [m for m in req["messages"] if m["role"] == "tool"][-1]["content"]
-            self._send({"message": {"role": "assistant", "content": f"scan summary was: {tool_out}"}})
+            self._send({"model": "fake", "done": True, "done_reason": "stop",
+                        "message": {"role": "assistant", "content": f"scan summary was: {tool_out}"}})
         else:
-            self._send({"message": {"role": "assistant", "content": "LLM summary: review flagged documents."}})
+            self._send({"model": "fake", "done": True, "done_reason": "stop",
+                        "message": {"role": "assistant", "content": "LLM summary: review flagged documents."}})
 
 
 def main():

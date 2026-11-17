@@ -105,9 +105,31 @@ an automatic pipeline: upload or point at document images, the cnn (`deep learni
 - `agent/tools.py` : tools (classify one document, scan a folder, scan history summary, model report). paths are restricted to the repo and `agent/uploads/`. policy: approve below 0.2 fake probability, reject above 0.8, otherwise manual review.
 - `agent/pipeline.py` : runs the team's data/model pipeline (`generate-fake-2B.py` → `preprocess.py` → `extract-features-2B.py` → `train-classifier.py`) in an isolated workspace under `agent/workspaces/`, so the shared `idnet_*` folders and csvs are never overwritten. genuine images must come from a `positive` folder (the generator refuses sources it cannot verify as genuine). the agent calls it with one tool, `run_data_pipeline`; a 75-image run takes about 40 seconds.
 - `agent/classical.py` : trains every classical model defined in the team's `train-classifier.py` (extra trees, random forest, xgboost, lightgbm, decision tree, adaboost, naive bayes, logistic regression, linear and rbf svm, knn, mlp) on a pipeline run's features, saves them to `agent/models/classical/` (not committed), and scores any image with all of them using the 295 `extract-features-2B.py` team features. it runs in a subprocess because pytorch and xgboost/lightgbm crash if loaded into one process on macos.
-- `agent/agent.py` : `pipeline()` runs the classifier then asks ollama for a summary (falls back to a plain-text summary if ollama is not running); `chat()` is a tool-calling loop so ollama can answer questions like "how many documents were rejected?".
+- `agent/agent.py` : the agent, built with langgraph and langchain-ollama (`ChatOllama`). two graphs, shown below. the cnn always makes the decision; ollama only explains and answers questions.
 - `agent/app.py` : streamlit ui with tabs for uploading documents (scored by the cnn and, optionally, all 12 classical models), scanning a folder, running the data pipeline, training and comparing models, asking the agent, and history.
 - `agent/test_agent.py` : smoke tests (decisions, bad input, path restriction, tool-calling loop against a fake ollama server, ui render).
+
+agent graphs (print them with `python -m agent.agent graph`):
+
+```mermaid
+graph TD;
+    START --> classify;
+    classify -->|CNN scores + decision rule, results logged| check_llm;
+    check_llm -.->|Ollama up| summarize_llm;
+    check_llm -.->|Ollama down| summarize_offline;
+    summarize_llm --> END;
+    summarize_offline --> END;
+```
+
+```mermaid
+graph TD;
+    START --> agent;
+    agent -.->|tool calls| tools;
+    tools --> agent;
+    agent -.->|final answer| END;
+```
+
+the first graph is the document pipeline (a conditional edge picks the ollama or the offline summary, so it works without ollama). the second is the chat agent: the llm chooses tools from `agent/tools.py`, they run as plain python, and the loop stops after 5 rounds.
 
 why ollama: it runs the llm locally, so identity document data never goes to an outside service. it is only used to explain results and answer questions, not to detect fraud.
 
