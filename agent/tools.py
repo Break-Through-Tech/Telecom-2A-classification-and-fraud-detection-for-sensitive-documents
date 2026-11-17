@@ -84,6 +84,50 @@ def classify_document(path, weights=DEFAULT_WEIGHTS):
     return result
 
 
+def classify_all_models(path, weights=DEFAULT_WEIGHTS):
+    """Score one document with the CNN and with every classical model from the generate-fake-test branch."""
+    from agent import classical
+    cnn = classify_document(path, weights)
+    out = {"file": cnn["file"], "cnn": {k: cnn.get(k) for k in ("decision", "fake_probability", "error")}}
+    if cnn.get("error"):
+        return out
+    classic = classical.score_image(safe_path(path))
+    out["classical"] = classic
+    if "error" not in classic:
+        votes = sum(v["label"] == "fake" for v in classic.values())
+        out["classical_fake_votes"] = f"{votes}/{len(classic)}"
+    return out
+
+
+def train_classical_models():
+    """Train and save every classical model from train-classifier.py (runs the data pipeline first if needed)."""
+    from agent import classical
+    ran_pipeline = None
+    if classical._latest_features() is None:
+        ran_pipeline = run_data_pipeline()
+        if not ran_pipeline["succeeded"]:
+            return {"error": "data pipeline failed", "pipeline": ran_pipeline}
+    info = classical.train_all()
+    return {"trained_models": list(info["models"]), "n_train": info["n_train"], "n_test": info["n_test"],
+            "fake_types_learned": info["fake_types"], "ran_pipeline": bool(ran_pipeline)}
+
+
+def compare_models():
+    """CNN cross-validation metrics next to the classical models' held-out test metrics."""
+    from agent import classical
+    info = classical.metadata()
+    classical_scores = None if info is None else {
+        k: {m: v[m] for m in ("test_accuracy", "test_f1", "test_roc_auc")} for k, v in info["models"].items()}
+    best = None
+    if classical_scores:
+        name = max(classical_scores, key=lambda k: classical_scores[k]["test_f1"])
+        best = {"name": name, **classical_scores[name]}
+    return {"best_classical_model_by_f1": best,
+            "note": "CNN and classical models were evaluated on different data, so do not rank one against the other",
+            "cnn_cross_validation_real_forgeries": model_report(),
+            "classical_held_out_test_synthetic_fakes": classical_scores}
+
+
 def scan_folder(folder, weights=DEFAULT_WEIGHTS, limit=200):
     """Classify every image in a folder (non-recursive) and log each result."""
     f = safe_path(folder)
@@ -168,7 +212,9 @@ def list_pipeline_runs():
 TOOL_FUNCS = {"classify_document": classify_document, "scan_folder": scan_folder,
               "scan_summary": scan_summary, "model_report": model_report,
               "start_pipeline_run": start_pipeline_run, "run_pipeline_stage": run_pipeline_stage,
-              "run_full_pipeline": run_full_pipeline, "run_data_pipeline": run_data_pipeline, "pipeline_status": pipeline_status,
+              "run_full_pipeline": run_full_pipeline, "run_data_pipeline": run_data_pipeline,
+              "classify_all_models": classify_all_models, "train_classical_models": train_classical_models,
+              "compare_models": compare_models, "pipeline_status": pipeline_status,
               "list_pipeline_runs": list_pipeline_runs}
 
 # schemas in the format Ollama's /api/chat expects
@@ -188,7 +234,7 @@ TOOL_SCHEMAS = [
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "model_report",
-        "description": "Accuracy, precision, recall, F1 and ROC-AUC of the trained classifiers from cross-validation.",
+        "description": "Metrics of the CNN ONLY (not the classical models). For any question about which model is best or about the classical models, use compare_models instead.",
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "run_data_pipeline",
@@ -196,6 +242,18 @@ TOOL_SCHEMAS = [
         "parameters": {"type": "object", "properties": {
             "source_folder": {"type": "string", "description": "folder of genuine images, default data/sample/GRC/positive"},
             "document_type": {"type": "string", "description": "passport, drivers_license or national_id"}}}}},
+    {"type": "function", "function": {
+        "name": "classify_all_models",
+        "description": "Check one document with the CNN and all 12 classical models and report how many say fake.",
+        "parameters": {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]}}},
+    {"type": "function", "function": {
+        "name": "train_classical_models",
+        "description": "Train and save all classical models from the generate-fake-test branch (runs the data pipeline first if needed).",
+        "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {
+        "name": "compare_models",
+        "description": "Accuracy, F1 and ROC-AUC of the CNN AND of each of the 12 classical models. Use this for questions like which model is best or how accurate the models are.",
+        "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "pipeline_status",
         "description": "Stage statuses and output files for a pipeline run.",

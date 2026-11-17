@@ -99,6 +99,17 @@ def main():
     else:
         print("SKIPPED pipeline test: data/sample/GRC/positive not found")
 
+    # 5b. classical models from the generate-fake-test branch
+    if positive.exists():
+        from agent import classical
+        out = tools.train_classical_models()
+        assert len(out["trained_models"]) == 12, out
+        both = tools.classify_all_models(FORGED[0] if False else GENUINE[0])
+        assert both["cnn"]["decision"] == "approve" and len(both["classical"]) == 12
+        print("all-models:", both["cnn"]["decision"], "| classical fake votes", both["classical_fake_votes"])
+        assert tools.compare_models()["classical_held_out_test_synthetic_fakes"]
+        assert "error" in classical.score_image(ROOT / "README.md")
+
     # 6. UI renders without errors
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(ROOT / "agent/app.py"), default_timeout=60).run()

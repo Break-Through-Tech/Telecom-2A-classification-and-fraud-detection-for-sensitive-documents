@@ -104,8 +104,9 @@ an automatic pipeline: upload or point at document images, the cnn (`deep learni
 
 - `agent/tools.py` : tools (classify one document, scan a folder, scan history summary, model report). paths are restricted to the repo and `agent/uploads/`. policy: approve below 0.2 fake probability, reject above 0.8, otherwise manual review.
 - `agent/pipeline.py` : runs the team's data/model pipeline (`generate-fake-2B.py` → `preprocess.py` → `extract-features-2B.py` → `train-classifier.py`) in an isolated workspace under `agent/workspaces/`, so the shared `idnet_*` folders and csvs are never overwritten. genuine images must come from a `positive` folder (the generator refuses sources it cannot verify as genuine). the agent calls it with one tool, `run_data_pipeline`; a 75-image run takes about 40 seconds.
+- `agent/classical.py` : trains every classical model defined in the team's `train-classifier.py` (extra trees, random forest, xgboost, lightgbm, decision tree, adaboost, naive bayes, logistic regression, linear and rbf svm, knn, mlp) on a pipeline run's features, saves them to `agent/models/classical/` (not committed), and scores any image with all of them using the 295 `extract-features-2B.py` team features. it runs in a subprocess because pytorch and xgboost/lightgbm crash if loaded into one process on macos.
 - `agent/agent.py` : `pipeline()` runs the classifier then asks ollama for a summary (falls back to a plain-text summary if ollama is not running); `chat()` is a tool-calling loop so ollama can answer questions like "how many documents were rejected?".
-- `agent/app.py` : streamlit ui with tabs for uploading documents, scanning a folder, running the data pipeline, asking the agent, and history.
+- `agent/app.py` : streamlit ui with tabs for uploading documents (scored by the cnn and, optionally, all 12 classical models), scanning a folder, running the data pipeline, training and comparing models, asking the agent, and history.
 - `agent/test_agent.py` : smoke tests (decisions, bad input, path restriction, tool-calling loop against a fake ollama server, ui render).
 
 why ollama: it runs the llm locally, so identity document data never goes to an outside service. it is only used to explain results and answer questions, not to detect fraud.
@@ -120,6 +121,8 @@ python train_cnn.py --arch resnet50 --final --name final_r50   # from "deep lear
 streamlit run agent/app.py                  # from the repo root
 python agent/test_agent.py                  # smoke tests
 ```
+
+the classical models learn the pipeline's synthetic tampering (rotation, partial blur, copy-move, splice, text edits), while the cnn learned idnet's real forgeries, so they disagree: in a 15-image demo the classical models flagged the team's synthetic fakes (11-12 of 12 models) but mostly missed real idnet forgeries (2-4 of 12), and the cnn did the opposite. their held-out scores (30 images) are not comparable to the cnn's cross-validation numbers.
 
 limits: a small local model (llama3.1:8b) was unreliable at multi-step tool use, so the pipeline is exposed as a single one-call tool. the classifier was trained on 75 genuine and 75 forged greek passports, so other document types or countries are out of scope and the ui warns when an image is not 1136x803. the smoke tests use a fake ollama server, so they check the plumbing, not the quality of a real llm.
 

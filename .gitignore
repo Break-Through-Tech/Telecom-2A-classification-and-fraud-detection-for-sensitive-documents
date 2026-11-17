@@ -8,3 +8,4 @@ __pycache__/
 agent/uploads/
 agent/runs/
 agent/workspaces/
+agent/models/
