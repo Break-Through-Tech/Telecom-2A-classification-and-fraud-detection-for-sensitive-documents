@@ -3,3 +3,7 @@ __pycache__/
 
 # trained weights
 *.pt
+
+# agent runtime files
+agent/uploads/
+agent/runs/

@@ -98,6 +98,30 @@ takeaways:
 - training on `generate_fake` generalizes to every noise type (accuracy 1.0) and reaches 0.945 accuracy / 0.994 auc on its own fakes, so it is the most robust training set.
 - caveat: these are all synthetic degradations of a clean image, which is much easier than the real idnet forgeries above. high scores here do not mean forged documents will be caught.
 
+## fraud detection agent (`agent/`)
+
+an automatic pipeline: upload or point at document images, the cnn (`deep learning algorithms/final_r50.pt`) scores each one, a policy turns the score into approve / manual review / reject, every result is logged, and a local ollama model writes a short explanation and answers questions about past scans. the cnn makes the decision; the llm never overrides it.
+
+- `agent/tools.py` : tools (classify one document, scan a folder, scan history summary, model report). paths are restricted to the repo and `agent/uploads/`. policy: approve below 0.2 fake probability, reject above 0.8, otherwise manual review.
+- `agent/agent.py` : `pipeline()` runs the classifier then asks ollama for a summary (falls back to a plain-text summary if ollama is not running); `chat()` is a tool-calling loop so ollama can answer questions like "how many documents were rejected?".
+- `agent/app.py` : streamlit ui with tabs for uploading documents, scanning a folder, asking the agent, and history.
+- `agent/test_agent.py` : smoke tests (decisions, bad input, path restriction, tool-calling loop against a fake ollama server, ui render).
+
+why ollama: it runs the llm locally, so identity document data never goes to an outside service. it is only used to explain results and answer questions, not to detect fraud.
+
+run it:
+
+```
+brew install ollama && ollama serve        # separate terminal
+ollama pull llama3.1:8b                     # or set OLLAMA_MODEL to another tool-calling model
+pip install -r requirements.txt
+python train_cnn.py --arch resnet50 --final --name final_r50   # from "deep learning algorithms/", creates the weights
+streamlit run agent/app.py                  # from the repo root
+python agent/test_agent.py                  # smoke tests
+```
+
+limits: the classifier was trained on 75 genuine and 75 forged greek passports, so other document types or countries are out of scope and the ui warns when an image is not 1136x803. the smoke tests use a fake ollama server, so they check the plumbing, not the quality of a real llm.
+
 ## repository layout
 
 - `config.py` : shared paths and constants
