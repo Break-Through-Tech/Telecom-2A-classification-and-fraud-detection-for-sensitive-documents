@@ -10,7 +10,7 @@ import pandas as pd
 from skimage.feature import hog, local_binary_pattern
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import MANIFEST_PATH, FEATURES_PATH, IMG_SIZE, TEXTURE_MAX_SIDE, require_empty_outputs
+from config import MANIFEST_PATH, FEATURES_PATH, IMG_SIZE, TEXTURE_MAX_SIDE, require_empty_outputs, GENERATED_MANIFEST_PATH
 HOG_ORIENTATIONS = 9
 HOG_PIXELS_PER_CELL = (16, 16)
 HOG_CELLS_PER_BLOCK = (2, 2)
@@ -406,11 +406,191 @@ def extract_copy_move_features(gray_image):
     points, descriptors = detector.detectAndCompute(view, None)
     return _copy_move_statistics(points or (), descriptors, view.shape)
 
+# Team-inspired descriptors: 295 values, using original-resolution color PNGs.
+# No labels, fold IDs, filenames, or edit coordinates enter these features.
+def _team_grid(array, n):
+    h, w = array.shape[:2]
+    if min(h, w) < n:
+        raise ValueError(f"Image too small for {n}x{n} cells: {array.shape}")
+    return [array[i*h//n:(i+1)*h//n, j*w//n:(j+1)*w//n]
+            for i in range(n) for j in range(n)]
 
-def extract_features_for_image(filepath, profile="compact"):
+
+def _team_anomaly(values):
+    v = np.asarray(values, dtype=np.float64)
+    if v.size == 0 or not np.isfinite(v).all():
+        raise ValueError("Empty/non-finite local measurements")
+    med = np.median(v)
+    # Relative floor limits explosions when many cells are identical.
+    scale = max(float(np.median(np.abs(v - med))),
+                0.01 * float(np.std(v)), 1e-6)
+    z = np.minimum(np.abs(v - med) / scale, 100.0)
+    return [v.max(), v.min(), v.std(), np.ptp(v), z.max(),
+            np.sort(z)[-min(3, len(z)):].mean()]
+
+
+def _team_hist_distance(histograms):
+    histograms = np.asarray(histograms, dtype=np.float64)
+    histograms = histograms / np.maximum(histograms.sum(axis=1, keepdims=True), 1e-12)
+    mean = histograms.mean(axis=0)
+    return ((histograms - mean)**2 / (histograms + mean + 1e-6)).sum(axis=1)
+
+
+def _team_noise_profile(gray, residual):
+    smooth = cv2.GaussianBlur(gray, (7, 7), 0).astype(np.float32)
+    grad = np.hypot(cv2.Sobel(smooth, cv2.CV_32F, 1, 0),
+                    cv2.Sobel(smooth, cv2.CV_32F, 0, 1))
+    flat = grad <= np.percentile(grad, 50)
+    def band_std(lo, hi):
+        mask = flat & (smooth >= lo) & (smooth < hi)
+        return float(residual[mask].std()) if mask.sum() >= 32 else 0.0
+    dark, mid, bright = [band_std(a, b) for a, b in ((0, 85), (85, 170), (170, 256))]
+    # A small noise floor avoids an unbounded ratio for absent/constant bands.
+    return [dark, mid, bright, bright / max(dark, 1.0)]
+
+
+def _team_jpeg_grid(gray):
+    g = gray.astype(np.float32)
+    dx, dy = np.abs(np.diff(g, axis=1)), np.abs(np.diff(g, axis=0))
+    h, w = gray.shape
+    strengths, offsets = [], []
+    def best(profile, start):
+        scores = [float(profile[(o-start) % 8::8].mean())
+                  if profile[(o-start) % 8::8].size else 0.0 for o in range(8)]
+        offset = int(np.argmax(scores))
+        return scores[offset] / max(float(profile.mean()), 1e-6), offset
+    for i in range(16):
+        y0, y1 = i*h//16, min((i+1)*h//16, h-1)
+        for j in range(16):
+            x0, x1 = j*w//16, min((j+1)*w//16, w-1)
+            sc, oc = best(dx[y0:y1, x0:x1].mean(axis=0), x0)
+            sr, row_offset = best(dy[y0:y1, x0:x1].mean(axis=1), y0)
+            strengths.append(sc + sr)
+            offsets.append(oc*8 + row_offset)
+    offsets = np.asarray(offsets)
+    return strengths, float(np.mean(offsets != np.bincount(offsets).argmax()))
+
+
+def _team_orb(gray):
+    # Do not invent texture by upsampling small originals.
+    factor = min(1.0, 1000.0 / max(gray.shape))
+    view = cv2.resize(gray, None, fx=factor, fy=factor, interpolation=cv2.INTER_AREA) if factor < 1 else gray
+    points, descriptors = cv2.ORB_create(nfeatures=1500).detectAndCompute(view, None)
+    if descriptors is None or len(points) < 3:
+        return [0.0, 0.0]
+    count = 0
+    for matches in cv2.BFMatcher(cv2.NORM_HAMMING).knnMatch(descriptors, descriptors, k=3):
+        others = [m for m in matches if m.trainIdx != m.queryIdx]
+        if len(others) < 2:
+            continue
+        a, b = others[:2]
+        if a.distance < 40 and a.distance < 0.7*b.distance:
+            p1, p2 = points[a.queryIdx].pt, points[a.trainIdx].pt
+            if np.hypot(p1[0]-p2[0], p1[1]-p2[1]) > 0.04*max(view.shape):
+                count += 1
+    return [float(count), float(count / len(points))]
+
+
+def extract_team_features(color):
+    gray_full = cv2.cvtColor(color, cv2.COLOR_BGR2GRAY)
+    if min(gray_full.shape) < 32:
+        raise ValueError("Team profiles require images at least 32x32")
+    residual = gray_full.astype(np.float32) - cv2.medianBlur(gray_full, 3).astype(np.float32)
+    def ela(quality):
+        ok, encoded = cv2.imencode('.jpg', color, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        if not ok:
+            raise OSError("JPEG encoding failed during feature extraction")
+        decoded = cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+        if decoded is None:
+            raise OSError("JPEG decoding failed during feature extraction")
+        return cv2.absdiff(color, decoded).astype(np.float32).mean(axis=2)
+    ela90, ela75 = ela(90), ela(75)
+    lap = cv2.Laplacian(gray_full, cv2.CV_32F)
+    lap_dn = cv2.Laplacian(cv2.medianBlur(gray_full, 5), cv2.CV_32F)
+    def values(array, n, stat):
+        return [float(stat(cell)) for cell in _team_grid(array, n)]
+    noise8, noise16 = values(residual, 8, np.std), values(residual, 16, np.std)
+    ela8, ela16 = values(ela90, 8, np.mean), values(ela90, 16, np.mean)
+    ela75_16 = values(ela75, 16, np.mean)
+    sharp8, sharp16 = values(lap, 8, np.var), values(lap, 16, np.var)
+    sharp_dn16 = values(lap_dn, 16, np.var)
+    block_strength, mismatch = _team_jpeg_grid(gray_full)
+
+    # Fixed card-like canvas matches the supplied team's feature design.
+    # Native-resolution residuals/JPEG measurements above are never resized.
+    small = cv2.resize(color, (512, 320), interpolation=cv2.INTER_AREA)
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    lbp = local_binary_pattern(gray, P=8, R=1, method='uniform')
+    def lbp_hists(n):
+        hist = np.asarray([np.bincount(c.astype(np.intp).ravel(), minlength=10)
+                           for c in _team_grid(lbp, n)], dtype=np.float64)
+        return hist / np.maximum(hist.sum(axis=1, keepdims=True), 1)
+    lbp_vector = lbp_hists(4).ravel()
+    lbp_dist = _team_hist_distance(lbp_hists(8))
+    hog_cells = hog(gray, orientations=9, pixels_per_cell=(40, 64),
+                    cells_per_block=(1, 1), feature_vector=False).reshape(-1, 9)
+    hog_dist = _team_hist_distance(hog_cells)
+    lab = cv2.cvtColor(small, cv2.COLOR_BGR2LAB).astype(np.float32)
+    color_cells = np.asarray([c.reshape(-1, 3).mean(axis=0) for c in _team_grid(lab, 4)])
+    color_dev = np.linalg.norm(color_cells-color_cells.mean(axis=0), axis=1)
+    coarse = [noise8, ela8, sharp8, lbp_dist, hog_dist, color_dev]
+    fine = [noise16, ela16, ela75_16, sharp16, sharp_dn16, block_strength]
+    parts = {
+        'global': [residual.std(), np.median(noise16), ela90.mean(), ela75.mean(),
+                   lap.var(), np.median(sharp16), lap_dn.var(), np.median(sharp_dn16)],
+        'noiseprofile': _team_noise_profile(gray_full, residual),
+        'lbp': lbp_vector, 'color': color_cells.ravel(),
+        'anomaly': [x for v in coarse for x in _team_anomaly(v)],
+        'fine': [x for v in fine for x in _team_anomaly(v)],
+        'jpeggrid': [mismatch], 'orb': _team_orb(gray_full),
+    }
+    result = {f'feat_team_{family}_{i}': float(v)
+              for family, vector in parts.items() for i, v in enumerate(vector)}
+    if len(result) != 295 or not np.isfinite(list(result.values())).all():
+        raise ValueError("Invalid team feature vector")
+    return result
+
+
+def _team_color_lookup(processed, generated_manifest):
+    """Join on provenance, never on filename labels or estimated paths."""
+    generated = pd.read_csv(generated_manifest)
+    keys = ['source_id', 'label', 'document_type', 'fold_id', 'split', 'tamper_type']
+    required = set(keys + ['filepath', 'artifact_sha256'])
+    if generated.empty or not required.issubset(generated.columns):
+        raise ValueError("Generated manifest lacks provenance/color artifact columns")
+    def key(row):
+        return tuple(str(row[k]) for k in keys)
+    lookup = {}
+    for record in generated.to_dict('records'):
+        k = key(record)
+        if k in lookup:
+            # Duplicated sources need a stable per-output identity to join safely.
+            raise ValueError("Ambiguous generated source rows; deduplicate originals before rebuilding")
+        lookup[k] = record
+    mapping = {}
+    for row in processed.to_dict('records'):
+        k = key(row)
+        if k not in lookup:
+            raise ValueError("Processed and generated manifests do not describe the same run")
+        mapping[str(row['filepath'])] = lookup[k]
+    return mapping
+
+
+def extract_features_for_image(filepath, profile="compact", color_image=None):
     image = cv2.imread(str(filepath), cv2.IMREAD_GRAYSCALE)
     if image is None:
         raise ValueError(f"Unreadable processed image: {filepath}")
+    if profile in ("team", "hybrid"):
+        if color_image is None:
+            raise ValueError("Team profiles need the matching generated color image")
+        if not np.array_equal(image, cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)):
+            raise ValueError("Generated color image does not match the processed grayscale image; rerun preprocessing with USE_COMPRESSED_INPUT=False")
+        team = extract_team_features(color_image)
+        if profile == "team":
+            return team
+        features = extract_features_for_image(filepath, profile="compact")
+        features.update(team)
+        return features
     texture = texture_image(image)
     if profile == "full":
         canvas = fit_hog_canvas(image)
@@ -430,7 +610,7 @@ def extract_features_for_image(filepath, profile="compact"):
     return features
 
 
-def extract_all(manifest_path=None, features_path=None, profile="compact"):
+def extract_all(manifest_path=None, features_path=None, profile="compact", generated_manifest_path=None):
     input_manifest = manifest_path or MANIFEST_PATH
     output_path = features_path or FEATURES_PATH
     require_empty_outputs(output_path)
@@ -438,15 +618,25 @@ def extract_all(manifest_path=None, features_path=None, profile="compact"):
     required = {"filepath", "label", "document_type", "source_id", "donor_id", "split", "fold_id", "tamper_type", "artifact_sha256"}
     if manifest.empty or not required.issubset(manifest.columns):
         raise ValueError("Regenerate using the patched sampling/generator/preprocessing stages first")
+    color_mapping = _team_color_lookup(manifest, generated_manifest_path or GENERATED_MANIFEST_PATH) if profile in ("team", "hybrid") else None
     rows = []
     for record in manifest.to_dict("records"):
         path = Path(record["filepath"])
         if hashlib.sha256(path.read_bytes()).hexdigest() != record["artifact_sha256"]:
             raise ValueError(f"Processed artifact changed: {path}")
-        result = extract_features_for_image(path, profile=profile)
+        color_image = None
+        if color_mapping is not None:
+            color_record = color_mapping[str(record['filepath'])]
+            color_path = Path(color_record['filepath'])
+            if hashlib.sha256(color_path.read_bytes()).hexdigest() != color_record['artifact_sha256']:
+                raise ValueError(f"Generated color artifact changed: {color_path}")
+            color_image = cv2.imread(str(color_path), cv2.IMREAD_COLOR)
+            if color_image is None:
+                raise ValueError(f"Unreadable generated color image: {color_path}")
+        result = extract_features_for_image(path, profile=profile, color_image=color_image)
         result.update(record)  # Provenance and evaluation columns are metadata.
         result["feature_profile"] = profile
-        result["feature_schema"] = "targeted_v1_lbp2" if profile == "compact_lbp2" else "targeted_v1"
+        result["feature_schema"] = ("team_inspired_v1_" + profile) if profile in ("team", "hybrid") else ("targeted_v1_lbp2" if profile == "compact_lbp2" else "targeted_v1")
         rows.append(result)
     output = pd.DataFrame(rows)
     feature_columns = [c for c in output if c.startswith("feat_")]
@@ -458,7 +648,7 @@ def extract_all(manifest_path=None, features_path=None, profile="compact"):
     output.to_csv(temporary, index=False)
     os.replace(temporary, destination)
     print(f"Extracted {len(output)} rows, {len(feature_columns)} features ({profile}): {destination}")
-    for family in ("lbp", "residual", "orientation", "direction", "copy", "hog", "block"):
+    for family in ("lbp", "residual", "orientation", "direction", "copy", "hog", "block", "team"):
         count = sum(c.startswith(f"feat_{family}_") for c in feature_columns)
         if count:
             print(f"  {family}: {count}")
@@ -469,7 +659,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest-file", help="Use an existing clean processed manifest")
     parser.add_argument("--output-file", help="Save a new feature CSV for a baseline comparison")
-    parser.add_argument("--profile", choices=("compact", "compact_lbp2", "full"), default="compact",
-                        help="compact: 898 features; compact_lbp2: 1186 with radius-2 LBP; full includes legacy groups")
+    parser.add_argument("--profile", choices=("compact", "compact_lbp2", "full", "team", "hybrid"), default="compact",
+                        help="compact: 898; compact_lbp2: 1186; team: 295; hybrid: 1193; full: legacy groups")
+    parser.add_argument("--generated-manifest-file", help="Matching generated color manifest (defaults to config GENERATED_MANIFEST_PATH)")
     args = parser.parse_args()
-    extract_all(args.manifest_file, args.output_file, args.profile)
+    extract_all(args.manifest_file, args.output_file, args.profile, args.generated_manifest_file)
