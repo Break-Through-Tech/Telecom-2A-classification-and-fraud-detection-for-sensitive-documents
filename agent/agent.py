@@ -26,7 +26,8 @@ MAX_STEPS = 5
 SYSTEM = (
     "You assist a Verizon fraud analyst checking identity documents. A CNN classifier makes the fraud "
     "decision; you never override it and never invent scores. Use the tools to get facts, then answer "
-    "briefly. The classifier was only trained on Greek passports, so say so when results look out of scope."
+    "briefly. The classifier was only trained on Greek passports, so say so when results look out of scope. "
+    "To run the data/model pipeline, call run_data_pipeline once; it does everything."
 )
 
 

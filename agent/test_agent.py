@@ -77,7 +77,29 @@ def main():
     assert trace[0]["tool"] == "scan_summary" and "total" in answer
     print("tool loop ok:", trace)
 
-    # 5. UI renders without errors
+    # 5. data/model pipeline in an isolated workspace (needs the local genuine sample)
+    positive = ROOT / "data/sample/GRC/positive"
+    if positive.exists():
+        import time
+        t0 = time.time()
+        run = tools.start_pipeline_run("data/sample/GRC/positive")
+        steps = tools.run_full_pipeline(run["run_id"])
+        print("pipeline:", [(x["stage"], x["status"]) for x in steps], f"{time.time() - t0:.0f}s")
+        assert [x["status"] for x in steps] == ["ok"] * 4
+        assert tools.pipeline_status(run["run_id"])["stages"]["train"]["status"] == "ok"
+        assert tools.run_pipeline_stage(run["run_id"], "train")["status"] == "ok"
+        # a stage cannot run before its predecessors, and non-genuine folders are refused
+        run2 = tools.start_pipeline_run("data/sample/GRC/positive")
+        assert tools.run_pipeline_stage(run2["run_id"], "train")["status"] == "blocked"
+        try:
+            tools.start_pipeline_run("data/GRC/fraud3_face_replacement")
+            raise AssertionError("forged folder should be refused")
+        except ValueError:
+            pass
+    else:
+        print("SKIPPED pipeline test: data/sample/GRC/positive not found")
+
+    # 6. UI renders without errors
     from streamlit.testing.v1 import AppTest
     at = AppTest.from_file(str(ROOT / "agent/app.py"), default_timeout=60).run()
     assert not at.exception, at.exception

@@ -127,8 +127,49 @@ def model_report():
     return out
 
 
+def start_pipeline_run(source_folder, document_type="passport"):
+    """Create an isolated workspace for the data/model pipeline from a folder of genuine images."""
+    from agent import pipeline
+    return pipeline.start_run(safe_path(Path(ROOT) / source_folder), document_type)
+
+
+def run_pipeline_stage(run_id, stage, feature_set=None):
+    """Run one pipeline stage (generate, preprocess, features, train) in a workspace."""
+    from agent import pipeline
+    return pipeline.run_stage(run_id, stage, feature_set=feature_set)
+
+
+def run_full_pipeline(run_id, feature_set=None):
+    """Run all four stages in order, stopping at the first failure."""
+    from agent import pipeline
+    return pipeline.run_all(run_id, feature_set=feature_set)
+
+
+def run_data_pipeline(source_folder="data/sample/GRC/positive", document_type="passport", feature_set=None):
+    """One call: create a workspace from genuine images and run every stage. Returns the run_id and each stage's result."""
+    run = start_pipeline_run(source_folder, document_type)
+    from agent import pipeline
+    steps = pipeline.run_all(run["run_id"], feature_set=feature_set)
+    ok = all(x["status"] == "ok" for x in steps) and len(steps) == len(pipeline.STAGES)
+    return {"run_id": run["run_id"], "n_genuine_images": run["n_genuine_images"],
+            "succeeded": ok, "stages": steps}
+
+
+def pipeline_status(run_id):
+    from agent import pipeline
+    return pipeline.pipeline_status(run_id)
+
+
+def list_pipeline_runs():
+    from agent import pipeline
+    return pipeline.list_runs()
+
+
 TOOL_FUNCS = {"classify_document": classify_document, "scan_folder": scan_folder,
-              "scan_summary": scan_summary, "model_report": model_report}
+              "scan_summary": scan_summary, "model_report": model_report,
+              "start_pipeline_run": start_pipeline_run, "run_pipeline_stage": run_pipeline_stage,
+              "run_full_pipeline": run_full_pipeline, "run_data_pipeline": run_data_pipeline, "pipeline_status": pipeline_status,
+              "list_pipeline_runs": list_pipeline_runs}
 
 # schemas in the format Ollama's /api/chat expects
 TOOL_SCHEMAS = [
@@ -148,5 +189,19 @@ TOOL_SCHEMAS = [
     {"type": "function", "function": {
         "name": "model_report",
         "description": "Accuracy, precision, recall, F1 and ROC-AUC of the trained classifiers from cross-validation.",
+        "parameters": {"type": "object", "properties": {}}}},
+    {"type": "function", "function": {
+        "name": "run_data_pipeline",
+        "description": "Run the whole data and model pipeline in one call (generate fakes, preprocess, extract features, train) on a folder of genuine IDNet images, in an isolated workspace. Returns run_id, whether it succeeded, and each stage's status.",
+        "parameters": {"type": "object", "properties": {
+            "source_folder": {"type": "string", "description": "folder of genuine images, default data/sample/GRC/positive"},
+            "document_type": {"type": "string", "description": "passport, drivers_license or national_id"}}}}},
+    {"type": "function", "function": {
+        "name": "pipeline_status",
+        "description": "Stage statuses and output files for a pipeline run.",
+        "parameters": {"type": "object", "properties": {"run_id": {"type": "string"}}, "required": ["run_id"]}}},
+    {"type": "function", "function": {
+        "name": "list_pipeline_runs",
+        "description": "List existing pipeline run ids.",
         "parameters": {"type": "object", "properties": {}}}},
 ]

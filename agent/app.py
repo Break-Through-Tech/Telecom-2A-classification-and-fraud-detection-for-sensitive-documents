@@ -41,7 +41,8 @@ def show_results(results):
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
-tab_check, tab_scan, tab_ask, tab_log = st.tabs(["Check documents", "Scan a folder", "Ask the agent", "History"])
+tab_check, tab_scan, tab_pipe, tab_ask, tab_log = st.tabs(
+    ["Check documents", "Scan a folder", "Run data pipeline", "Ask the agent", "History"])
 
 with tab_check:
     files = st.file_uploader("Upload one or more document images", type=["png", "jpg", "jpeg", "webp"],
@@ -75,6 +76,26 @@ with tab_scan:
             show_results(results)
         except Exception as e:
             st.error(f"{type(e).__name__}: {e}")
+
+with tab_pipe:
+    st.caption("Runs the team's pipeline (generate fakes → preprocess → extract features → train) in an isolated "
+               "workspace under agent/workspaces/, so shared data folders are never overwritten.")
+    src = st.text_input("Folder of genuine IDNet images (must be a 'positive' folder)", "data/sample/GRC/positive")
+    if st.button("Run full pipeline", key="run_pipe"):
+        try:
+            run = tools.start_pipeline_run(src)
+            st.write(f"workspace `{run['run_id']}` with {run['n_genuine_images']} genuine images")
+            for stage in ("generate", "preprocess", "features", "train"):
+                with st.spinner(f"running {stage}..."):
+                    r = tools.run_pipeline_stage(run["run_id"], stage)
+                (st.success if r["status"] == "ok" else st.error)(f"{stage}: {r['status']} in {r.get('seconds')}s")
+                with st.expander(f"{stage} log"):
+                    st.code(r.get("log_tail", r.get("detail", "")))
+                if r["status"] != "ok":
+                    break
+        except Exception as e:
+            st.error(f"{type(e).__name__}: {e}")
+    st.write("existing runs:", tools.list_pipeline_runs() or "none")
 
 with tab_ask:
     st.caption("Ask things like: 'how many documents were rejected so far?' or 'how accurate is the model?'")

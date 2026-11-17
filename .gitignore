@@ -7,3 +7,4 @@ __pycache__/
 # agent runtime files
 agent/uploads/
 agent/runs/
+agent/workspaces/
